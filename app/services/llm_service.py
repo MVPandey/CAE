@@ -1,84 +1,86 @@
+"""LLM Service for handling OpenAI API interactions."""
+
 import json
-import re
 import uuid
 from typing import Any
 
-from openai import AsyncOpenAI
 from openai.types.chat.chat_completion import ChatCompletion
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    wait_exponential,
-    retry_if_exception_type,
-)
-import openai
 
 from ..utils.config import app_settings
 from ..utils.logger import logger
 from ..utils.exceptions import LLMException
+from ..utils.tool_registry import tool_registry
+from ..utils.json_utils import clean_json_response
+from ..utils.constants import (
+    DEFAULT_MAX_TOKENS,
+    REQUEST_ID_PREFIX_LLM,
+)
 from ..schema.llm.message import Message, ToolMessage
-from ..schema.llm.tool import AbstractTool, ToolCall
-
-
-def collect_tools() -> dict[str, dict[str, Any]]:
-    """
-    Collects all AbstractTool subclasses and their schemas/functions.
-    Returns a dictionary mapping tool names to their details.
-    """
-    tools = {}
-
-    for tool_class in AbstractTool.__subclasses__():
-        try:
-            tool_name = tool_class.__name__
-
-            tools[tool_name] = {
-                "class": tool_class,
-                "schema": tool_class.tool_schema,
-                "function": tool_class.tool_function(),
-            }
-
-            logger.debug(f"Collected tool: {tool_name}")
-        except Exception as e:
-            logger.error(f"Failed to collect tool {tool_class.__name__}: {str(e)}")
-            continue
-
-    return tools
-
-
-def clean_json_response(response: str) -> dict:
-    try:
-        match = re.search(r"```(?:json)?(.*?)```", response, re.DOTALL)
-        if match is None:
-            return json.loads(response)
-        json_content = match.group(1).strip()
-        return json.loads(json_content)
-    except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse JSON response: {e}\n\nResponse: {response}")
-        raise LLMException(
-            f"Failed to parse JSON response: {e}\n\nResponse: {response}"
-        ) from e
+from ..schema.llm.tool import ToolCall
+from .llm import LLMClient, ToolExecutor
 
 
 class LLMService:
+    """
+    Service for interacting with LLM APIs.
+
+    This service provides a high-level interface for:
+    - Sending messages to LLM with automatic retry logic
+    - Managing tool registration and execution
+    - Handling response parsing (text or JSON)
+    - Error handling and logging
+
+    Example:
+        ```python
+        service = LLMService()
+
+        # Simple text query
+        response = await service.query_llm(
+            Message(role="user", content="Hello, world!")
+        )
+
+        # JSON response with tools
+        result = await service.query_llm(
+            messages=[Message(role="user", content="Get weather")],
+            json_response=True,
+            tools=["GetWeatherTool"],
+            max_tokens=500
+        )
+        ```
+    """
+
     def __init__(
         self,
-        base_url: str = app_settings.LLM_API_BASE_URL,
-        api_key: str = app_settings.LLM_API_KEY,
-        model_name: str = app_settings.LLM_MODEL_NAME,
+        base_url: str | None = None,
+        api_key: str | None = None,
+        model_name: str | None = None,
+        timeout: float | None = None,
     ):
-        self.base_url = base_url
-        self.api_key = api_key
-        self.model_name = model_name
+        """
+        Initialize LLM Service.
 
-        self.tools: dict[str, dict[str, Any]] = collect_tools()
-        logger.debug(f"Initialized LLMService with {len(self.tools)} tools")
+        Args:
+            base_url: LLM API base URL (defaults to config)
+            api_key: LLM API key (defaults to config)
+            model_name: Model name to use (defaults to config)
+            timeout: Request timeout in seconds (defaults to config)
+        """
+        self.model_name = model_name or app_settings.LLM_MODEL_NAME
 
-    def _client(self) -> AsyncOpenAI:
-        return AsyncOpenAI(
-            base_url=self.base_url,
-            api_key=self.api_key,
-            timeout=float(app_settings.LLM_TIMEOUT_SECONDS),  # Configurable timeout
-            max_retries=3,
+        self.client = LLMClient(
+            base_url=base_url,
+            api_key=api_key,
+            timeout=timeout,
+        )
+        self.tool_executor = ToolExecutor()
+        self.retry_decorator = LLMClient.get_retry_decorator()
+
+        logger.info(
+            "Initialized LLMService",
+            extra={
+                "model": self.model_name,
+                "available_tools": tool_registry.list_tool_names(),
+            },
         )
 
     async def query_llm(
@@ -86,9 +88,11 @@ class LLMService:
         messages: Message | list[Message],
         json_response: bool = False,
         tools: str | list[str] | None = None,
-        max_tokens: int = 250,
+        max_tokens: int = DEFAULT_MAX_TOKENS,
+        temperature: float | None = None,
+        top_p: float | None = None,
         **kwargs,
-    ) -> Message:
+    ) -> Message | dict:
         """
         Query the LLM with messages and optional tools.
 
@@ -96,7 +100,9 @@ class LLMService:
             messages: Single message or list of messages to send to LLM
             json_response: Whether to request JSON formatted response
             tools: Tool name(s) to make available to LLM
-            max_tokens: Maximum tokens for the response (default: 250)
+            max_tokens: Maximum tokens for the response
+            temperature: Sampling temperature (0-2)
+            top_p: Nucleus sampling parameter
             **kwargs: Additional parameters for the LLM API
 
         Returns:
@@ -104,8 +110,18 @@ class LLMService:
 
         Raises:
             LLMException: If LLM query fails or response parsing fails
+            ValueError: If invalid parameters are provided
         """
-        request_id = f"msg_{str(uuid.uuid4())}"
+        request_id = f"{REQUEST_ID_PREFIX_LLM}_{str(uuid.uuid4())}"
+
+        if max_tokens <= 0:
+            raise ValueError(f"max_tokens must be positive, got {max_tokens}")
+
+        if temperature is not None and not 0 <= temperature <= 2:
+            raise ValueError(f"temperature must be between 0 and 2, got {temperature}")
+
+        if top_p is not None and not 0 <= top_p <= 1:
+            raise ValueError(f"top_p must be between 0 and 1, got {top_p}")
 
         logger.info(
             "Starting LLM query",
@@ -116,12 +132,21 @@ class LLMService:
                 "message_count": len(messages) if isinstance(messages, list) else 1,
                 "model": self.model_name,
                 "max_tokens": max_tokens,
+                "temperature": temperature,
+                "top_p": top_p,
             },
         )
 
         try:
             normalized_messages = self._normalize_messages(messages)
-            prepared_tools = self._prepare_tools(tools, request_id)
+
+            prepared_tools = self._prepare_tools(tools) if tools else None
+
+            llm_kwargs = kwargs.copy()
+            if temperature is not None:
+                llm_kwargs["temperature"] = temperature
+            if top_p is not None:
+                llm_kwargs["top_p"] = top_p
 
             completion = await self._make_llm_request(
                 normalized_messages,
@@ -129,7 +154,7 @@ class LLMService:
                 json_response,
                 request_id,
                 max_tokens=max_tokens,
-                **kwargs,
+                **llm_kwargs,
             )
 
             if completion.choices[0].message.tool_calls:
@@ -139,11 +164,13 @@ class LLMService:
                     json_response,
                     request_id,
                     max_tokens=max_tokens,
-                    **kwargs,
+                    **llm_kwargs,
                 )
 
             return self._process_response(completion, json_response, request_id)
 
+        except LLMException:
+            raise
         except Exception as e:
             logger.error(
                 "LLM query failed",
@@ -151,160 +178,120 @@ class LLMService:
                     "request_id": request_id,
                     "error": str(e),
                     "error_type": type(e).__name__,
-                    "json_response": json_response,
-                    "tools": tools,
                 },
+                exc_info=True,
             )
-            if isinstance(e, LLMException):
-                raise
             raise LLMException(f"Failed to query LLM: {e}") from e
 
     def _normalize_messages(self, messages: Message | list[Message]) -> list[Message]:
-        """Convert single message to list format."""
+        """
+        Convert single message to list format.
+
+        Args:
+            messages: Single message or list of messages
+
+        Returns:
+            List of messages
+        """
         if isinstance(messages, Message):
             return [messages]
         return messages
 
-    def _prepare_tools(
-        self, tools: str | list[str] | None, request_id: uuid.UUID
-    ) -> list[dict] | None:
+    def _prepare_tools(self, tools: str | list[str]) -> list[dict]:
         """
-        Prepare tools for LLM request.
+        Prepare tool schemas for LLM request.
 
         Args:
             tools: Tool name(s) to prepare
-            request_id: Request ID for logging
 
         Returns:
-            List of tool schemas or None if no tools
+            List of tool schemas
 
         Raises:
             ValueError: If unknown tool is requested
         """
-        if not tools:
-            return None
-
         if isinstance(tools, str):
             tools = [tools]
 
-        tools_to_call = []
-        for tool in tools:
-            if tool not in self.tools:
-                logger.error(
-                    "Unknown tool requested",
-                    extra={
-                        "request_id": request_id,
-                        "unknown_tool": tool,
-                        "available_tools": list(self.tools.keys()),
-                    },
-                )
-                raise ValueError(f"Unknown tool: {tool}")
+        return tool_registry.get_tool_schemas(tools)
 
-            tool_schema = self.tools[tool]["schema"].model_dump(exclude_none=True)
-            tools_to_call.append(tool_schema)
+    @property
+    def tools(self) -> dict[str, dict[str, Any]]:
+        """
+        Get available tools from registry.
 
-            logger.debug(
-                "Tool prepared for LLM",
-                extra={
-                    "request_id": request_id,
-                    "tool_name": tool,
-                    "tool_schema": tool_schema,
-                },
-            )
+        Returns:
+            Dictionary mapping tool names to their details
+        """
+        return tool_registry.tools
 
-        logger.info(
-            "Tools prepared for LLM request",
-            extra={
-                "request_id": request_id,
-                "tool_count": len(tools_to_call),
-                "tool_names": tools,
-            },
-        )
-
-        return tools_to_call
-
-    @retry(
-        stop=stop_after_attempt(5),
-        wait=wait_exponential(multiplier=1, min=2, max=60),
-        retry=(
-            retry_if_exception_type(openai.RateLimitError)
-            | retry_if_exception_type(openai.APITimeoutError)
-            | retry_if_exception_type(openai.APIConnectionError)
-        ),
-    )
     async def _make_llm_request(
         self,
         messages: list[Message],
         tools: list[dict] | None,
         json_response: bool,
-        request_id: uuid.UUID,
+        request_id: str,
         max_tokens: int,
         **kwargs,
     ) -> ChatCompletion:
         """
-        Make the actual LLM API request.
+        Make the actual LLM API request with retry logic.
 
         Args:
-            messages: Normalized list of messages
-            tools: Prepared tool schemas
+            messages: List of messages to send
+            tools: Tool schemas if any
             json_response: Whether to request JSON response
             request_id: Request ID for logging
-            max_tokens: Maximum tokens for the response
+            max_tokens: Maximum tokens for response
             **kwargs: Additional LLM parameters
 
         Returns:
-            ChatCompletion response from LLM
+            ChatCompletion from LLM
         """
-        client = self._client()
-
-        # Convert Message objects to dictionaries for OpenAI API
         message_dicts = [msg.model_dump() for msg in messages]
 
         request_params = {
             "model": self.model_name,
             "messages": message_dicts,
-            "tools": tools,
-            "response_format": {"type": "json_object"} if json_response else None,
             "max_tokens": max_tokens,
             **kwargs,
         }
+
+        if tools:
+            request_params["tools"] = tools
+
+        if json_response:
+            request_params["response_format"] = {"type": "json_object"}
 
         logger.debug(
             "Making LLM API request",
             extra={
                 "request_id": request_id,
-                "latest_message_content": messages[-1].content[:200] + "..."
-                if len(str(messages[-1].content)) > 200
-                else messages[-1].content,
-                "request_params": {
-                    "model": request_params["model"],
-                    "message_count": len(messages),
-                    "tools_provided": len(tools) if tools else 0,
-                    "json_response": json_response,
-                    "max_tokens": request_params.get("max_tokens"),
-                    "additional_params": list(kwargs.keys()),
-                },
+                "model": self.model_name,
+                "message_count": len(messages),
+                "has_tools": bool(tools),
+                "json_response": json_response,
+                "max_tokens": max_tokens,
             },
         )
 
-        completion: ChatCompletion = await client.chat.completions.create(
-            **request_params
-        )
+        @self.retry_decorator
+        async def _make_request():
+            client = self.client.get_client()
+            return await client.chat.completions.create(**request_params)
+
+        completion = await _make_request()
 
         logger.info(
             "LLM API request completed",
             extra={
                 "request_id": request_id,
-                "response_metadata": {
-                    "model": completion.model,
-                    "usage": completion.usage.model_dump()
-                    if completion.usage
-                    else None,
-                    "finish_reason": completion.choices[0].finish_reason,
-                    "has_tool_calls": bool(completion.choices[0].message.tool_calls),
-                },
+                "finish_reason": completion.choices[0].finish_reason,
+                "has_tool_calls": bool(completion.choices[0].message.tool_calls),
+                "usage": completion.usage.model_dump() if completion.usage else None,
             },
         )
+
         return completion
 
     async def _handle_tool_workflow(
@@ -312,19 +299,19 @@ class LLMService:
         initial_completion: ChatCompletion,
         messages: list[Message],
         json_response: bool,
-        request_id: uuid.UUID,
+        request_id: str,
         max_tokens: int,
         **kwargs,
     ) -> ChatCompletion:
         """
-        Handle the complete tool calling workflow.
+        Handle tool calling workflow.
 
         Args:
             initial_completion: Initial LLM response with tool calls
             messages: Original messages
             json_response: Whether to request JSON response
             request_id: Request ID for logging
-            max_tokens: Maximum tokens for the response
+            max_tokens: Maximum tokens for response
             **kwargs: Additional LLM parameters
 
         Returns:
@@ -337,108 +324,51 @@ class LLMService:
             extra={
                 "request_id": request_id,
                 "tool_call_count": len(tool_calls),
-                "tool_calls": [
-                    {
-                        "id": call.id,
-                        "function_name": call.function.name,
-                        "arguments": call.function.arguments,
-                    }
-                    for call in tool_calls
-                ],
             },
         )
 
-        tool_results = await self.handle_tool_calls(tool_calls)
-
-        logger.debug(
-            "Tool execution completed",
-            extra={
-                "request_id": request_id,
-                "tool_result_count": len(tool_results),
-                "tool_results": [
-                    {
-                        "tool_call_id": result.tool_call_id,
-                        "tool_name": result.name,
-                        "success": "error" not in str(result.content),
-                    }
-                    for result in tool_results
-                ],
-            },
+        tool_results = await self.tool_executor.execute_tool_calls(
+            tool_calls, execution_id=request_id
         )
 
-        # Convert all messages to dictionaries for OpenAI API
         message_dicts = [msg.model_dump() for msg in messages]
+        message_dicts.append(initial_completion.choices[0].message.model_dump())
 
-        # Add the assistant's message with tool calls
-        assistant_msg = initial_completion.choices[0].message
-        message_dicts.append(assistant_msg.model_dump())
-
-        # Add tool results
         for tool_result in tool_results:
             message_dicts.append(tool_result.model_dump())
 
-        logger.debug(
-            "Making follow-up LLM request with tool results",
-            extra={
-                "request_id": request_id,
-                "total_message_count": len(message_dicts),
-                "tool_result_count": len(tool_results),
-            },
-        )
+        request_params = {
+            "model": self.model_name,
+            "messages": message_dicts,
+            "max_tokens": max_tokens,
+            **kwargs,
+        }
 
-        # Use retry logic for follow-up request
-        final_completion = await self._make_follow_up_request(
-            message_dicts, json_response, request_id, max_tokens, **kwargs
-        )
+        if json_response:
+            request_params["response_format"] = {"type": "json_object"}
+
+        @self.retry_decorator
+        async def _make_follow_up():
+            client = self.client.get_client()
+            return await client.chat.completions.create(**request_params)
+
+        final_completion = await _make_follow_up()
 
         logger.info(
-            "Follow-up LLM request completed",
+            "Tool workflow completed",
             extra={
                 "request_id": request_id,
-                "final_response_metadata": {
-                    "model": final_completion.model,
-                    "usage": final_completion.usage.model_dump()
-                    if final_completion.usage
-                    else None,
-                    "finish_reason": final_completion.choices[0].finish_reason,
-                    "has_tool_calls": bool(
-                        final_completion.choices[0].message.tool_calls
-                    ),
-                },
+                "final_finish_reason": final_completion.choices[0].finish_reason,
             },
         )
 
         return final_completion
 
-    @retry(
-        stop=stop_after_attempt(5),
-        wait=wait_exponential(multiplier=1, min=2, max=60),
-        retry=(
-            retry_if_exception_type(openai.RateLimitError)
-            | retry_if_exception_type(openai.APITimeoutError)
-            | retry_if_exception_type(openai.APIConnectionError)
-        ),
-    )
-    async def _make_follow_up_request(
-        self,
-        message_dicts: list[dict],
-        json_response: bool,
-        request_id: uuid.UUID,
-        max_tokens: int,
-        **kwargs,
-    ) -> ChatCompletion:
-        """Make a follow-up request with tool results, with retry logic."""
-        client = self._client()
-        return await client.chat.completions.create(
-            model=self.model_name,
-            messages=message_dicts,
-            response_format={"type": "json_object"} if json_response else None,
-            max_tokens=max_tokens,
-            **kwargs,
-        )
-
     def _process_response(
-        self, completion: ChatCompletion, json_response: bool, request_id: uuid.UUID
+        self,
+        completion: ChatCompletion,
+        json_response: bool,
+        request_id: str,
     ) -> Message | dict:
         """
         Process the final LLM response.
@@ -457,25 +387,10 @@ class LLMService:
         response_content = completion.choices[0].message.content
 
         if json_response:
-            # Check for None or empty content
             if response_content is None:
-                logger.error(
-                    "LLM returned None content for JSON response",
-                    extra={
-                        "request_id": request_id,
-                        "finish_reason": completion.choices[0].finish_reason,
-                    },
-                )
                 raise LLMException("LLM returned None content for JSON response")
 
             if not response_content.strip():
-                logger.error(
-                    "LLM returned empty content for JSON response",
-                    extra={
-                        "request_id": request_id,
-                        "finish_reason": completion.choices[0].finish_reason,
-                    },
-                )
                 raise LLMException("LLM returned empty content for JSON response")
 
             try:
@@ -487,258 +402,25 @@ class LLMService:
                         "response_keys": list(parsed_response.keys())
                         if isinstance(parsed_response, dict)
                         else None,
-                        "response_type": type(parsed_response).__name__,
                     },
                 )
                 return parsed_response
-            except json.JSONDecodeError as e:
-                logger.error(
-                    "Failed to parse JSON response",
-                    extra={
-                        "request_id": request_id,
-                        "error": str(e),
-                        "response_content": response_content[:500] + "..."
-                        if len(response_content) > 500
-                        else response_content,
-                    },
-                )
-                raise LLMException(
-                    f"Failed to parse JSON response: {e}\n\nResponse: {response_content}"
-                ) from e
+            except json.JSONDecodeError:
+                return clean_json_response(response_content)
         else:
-            logger.info(
-                "Text response processed successfully",
-                extra={
-                    "request_id": request_id,
-                    "response_length": len(response_content) if response_content else 0,
-                    "response_preview": response_content[:200] + "..."
-                    if response_content and len(response_content) > 200
-                    else response_content,
-                },
-            )
             return completion.choices[0].message
 
     async def handle_tool_calls(self, tool_calls: list[ToolCall]) -> list[ToolMessage]:
         """
         Handle tool calls from the LLM response.
 
+        This method is kept for backward compatibility.
+        New code should use tool_executor directly.
+
         Args:
             tool_calls: List of ToolCall objects from the LLM response
 
         Returns:
-            List of ToolMessage objects with the results of tool execution
+            List of ToolMessage objects with the results
         """
-        if not tool_calls:
-            logger.debug("No tool calls to process")
-            return []
-
-        execution_id = f"tool_{str(uuid.uuid4())}"
-
-        logger.info(
-            "Starting tool execution batch",
-            extra={
-                "execution_id": execution_id,
-                "tool_call_count": len(tool_calls),
-                "tool_calls_summary": [
-                    {
-                        "id": call.id,
-                        "function_name": call.function.name,
-                        "has_arguments": bool(call.function.arguments),
-                    }
-                    for call in tool_calls
-                ],
-            },
-        )
-
-        results = []
-        successful_calls = 0
-        failed_calls = 0
-
-        for call_index, call in enumerate(tool_calls):
-            logger.debug(
-                "Executing individual tool call",
-                extra={
-                    "execution_id": execution_id,
-                    "call_index": call_index,
-                    "tool_call_id": call.id,
-                    "function_name": call.function.name,
-                    "arguments": call.function.arguments,
-                },
-            )
-
-            try:
-                tool_result = await self._execute_single_tool_call(
-                    call, execution_id, call_index
-                )
-                results.append(tool_result)
-                successful_calls += 1
-
-                logger.info(
-                    "Tool call executed successfully",
-                    extra={
-                        "execution_id": execution_id,
-                        "call_index": call_index,
-                        "tool_call_id": call.id,
-                        "function_name": call.function.name,
-                        "result_preview": str(tool_result.content)[:200] + "..."
-                        if len(str(tool_result.content)) > 200
-                        else str(tool_result.content),
-                    },
-                )
-
-            except Exception as e:
-                failed_calls += 1
-                error_result = self._create_error_tool_message(
-                    call, e, execution_id, call_index
-                )
-                results.append(error_result)
-
-        logger.info(
-            "Tool execution batch completed",
-            extra={
-                "execution_id": execution_id,
-                "total_calls": len(tool_calls),
-                "successful_calls": successful_calls,
-                "failed_calls": failed_calls,
-                "success_rate": successful_calls / len(tool_calls) if tool_calls else 0,
-            },
-        )
-
-        return results
-
-    async def _execute_single_tool_call(
-        self, call: ToolCall, execution_id: uuid.UUID, call_index: int
-    ) -> ToolMessage:
-        """
-        Execute a single tool call.
-
-        Args:
-            call: The ToolCall object to execute
-            execution_id: Execution batch ID for logging
-            call_index: Index of this call in the batch
-
-        Returns:
-            ToolMessage with the result
-
-        Raises:
-            Exception: If tool execution fails
-        """
-        name = call.function.name
-
-        try:
-            args = json.loads(call.function.arguments)
-        except json.JSONDecodeError as e:
-            logger.error(
-                "Failed to parse tool arguments",
-                extra={
-                    "execution_id": execution_id,
-                    "call_index": call_index,
-                    "tool_call_id": call.id,
-                    "function_name": name,
-                    "raw_arguments": call.function.arguments,
-                    "error": str(e),
-                },
-            )
-            raise ValueError(f"Invalid JSON in tool arguments: {e}") from e
-
-        if name not in self.tools:
-            logger.error(
-                "Tool not found in available tools",
-                extra={
-                    "execution_id": execution_id,
-                    "call_index": call_index,
-                    "tool_call_id": call.id,
-                    "requested_tool": name,
-                    "available_tools": list(self.tools.keys()),
-                },
-            )
-            raise ValueError(f"Tool '{name}' not found in available tools")
-
-        tool_function = self.tools[name]["function"]
-
-        logger.debug(
-            "Executing tool function",
-            extra={
-                "execution_id": execution_id,
-                "call_index": call_index,
-                "tool_call_id": call.id,
-                "function_name": name,
-                "parsed_arguments": args,
-            },
-        )
-
-        try:
-            result = await tool_function(**args)
-
-            tool_message = ToolMessage(
-                role="tool",
-                tool_call_id=call.id,
-                name=name,
-                content=result.json(),
-            )
-
-            logger.debug(
-                "Tool function executed successfully",
-                extra={
-                    "execution_id": execution_id,
-                    "call_index": call_index,
-                    "tool_call_id": call.id,
-                    "function_name": name,
-                    "result_type": type(result).__name__,
-                },
-            )
-
-            return tool_message
-
-        except Exception as e:
-            logger.error(
-                "Tool function execution failed",
-                extra={
-                    "execution_id": execution_id,
-                    "call_index": call_index,
-                    "tool_call_id": call.id,
-                    "function_name": name,
-                    "error": str(e),
-                    "error_type": type(e).__name__,
-                    "arguments": args,
-                },
-            )
-            raise
-
-    def _create_error_tool_message(
-        self, call: ToolCall, error: Exception, execution_id: uuid.UUID, call_index: int
-    ) -> ToolMessage:
-        """
-        Create a ToolMessage for a failed tool call.
-
-        Args:
-            call: The failed ToolCall
-            error: The exception that occurred
-            execution_id: Execution batch ID for logging
-            call_index: Index of this call in the batch
-
-        Returns:
-            ToolMessage with error information
-        """
-        logger.error(
-            "Creating error tool message",
-            extra={
-                "execution_id": execution_id,
-                "call_index": call_index,
-                "tool_call_id": getattr(call, "id", "unknown"),
-                "function_name": getattr(call.function, "name", "unknown")
-                if hasattr(call, "function")
-                else "unknown",
-                "error": str(error),
-                "error_type": type(error).__name__,
-            },
-        )
-
-        return ToolMessage(
-            role="tool",
-            tool_call_id=getattr(call, "id", "unknown"),
-            name=getattr(call.function, "name", "unknown")
-            if hasattr(call, "function")
-            else "unknown",
-            content={"error": str(error), "error_type": type(error).__name__},
-        )
+        return await self.tool_executor.execute_tool_calls(tool_calls)

@@ -58,8 +58,6 @@ class ChatService:
 
         tool_calls_for_db = None
         if llm_response.tool_calls:
-            # The ChatMessage schema expects a dict for tool_calls, but the LLM
-            # response provides a list. We'll store it in a dict as a workaround.
             tool_calls_for_db = {
                 "tool_calls": [tc.model_dump() for tc in llm_response.tool_calls]
             }

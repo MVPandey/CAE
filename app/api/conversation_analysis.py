@@ -87,7 +87,7 @@ async def analyze_conversation(
         raise HTTPException(status_code=500, detail="Internal server error: " + str(e))
 
 
-@router.get("/{chat_id}", response_model=list[dict])
+@router.get("/{chat_id}", response_model=list[ConversationAnalysisResponse])
 async def get_conversation_analyses(chat_id: UUID):
     """
     Retrieves all analyses performed for a specific chat session.

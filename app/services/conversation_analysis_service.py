@@ -55,7 +55,6 @@ class ConversationAnalysisService:
             Message(role=msg.role.value, content=msg.content) for msg in history
         ]
 
-        # Generate initial responses
         initial_responses = await self.response_generator.generate_initial_branches(
             messages,
             request.num_branches,
@@ -63,7 +62,6 @@ class ConversationAnalysisService:
             request.max_tokens,
         )
 
-        # Run MCTS
         mcts_config = {
             "iterations": request.mcts_iterations,
             "simulation_depth": request.simulation_depth,
@@ -76,12 +74,10 @@ class ConversationAnalysisService:
             messages, initial_responses, mcts_config
         )
 
-        # Analyze and select best path
         best_node, best_idx, analysis = await self.analyzer.analyze_best_path(
             root_nodes, messages, request.conversation_goal, request.max_tokens
         )
 
-        # Convert to response format
         branches = self.analyzer.convert_to_branches(root_nodes)
 
         scores = {
@@ -93,7 +89,6 @@ class ConversationAnalysisService:
             ),
         }
 
-        # Store results
         db_result = await create_conversation_analysis(
             chat_id=request.chat_id,
             conversation_goal=request.conversation_goal,

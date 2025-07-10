@@ -6,9 +6,7 @@ from sqlalchemy.orm import (
     mapped_column,
     relationship,
 )
-from sqlalchemy import String, DateTime, ForeignKey, JSON, select, delete
-
-# from pgvector.sqlalchemy import Vector  # Temporarily disabled until pgvector is properly installed
+from sqlalchemy import String, DateTime, ForeignKey, JSON, select
 from uuid import UUID, uuid4
 from datetime import datetime
 import sqlalchemy as sa
@@ -29,7 +27,6 @@ class UserModel(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    # Relationship to chats - cascade delete
     chats: Mapped[list["ChatModel"]] = relationship(
         "ChatModel", back_populates="user", cascade="all, delete-orphan"
     )
@@ -43,10 +40,8 @@ class ChatModel(Base):
     )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    # Relationship to user
     user: Mapped[UserModel] = relationship("UserModel", back_populates="chats")
 
-    # Relationship to messages - cascade delete
     messages: Mapped[list["ChatMessageModel"]] = relationship(
         "ChatMessageModel", back_populates="chat", cascade="all, delete-orphan"
     )
@@ -63,9 +58,7 @@ class ChatMessageModel(Base):
     tool_calls: Mapped[dict | None] = mapped_column(JSON)
     tool_call_id: Mapped[str | None] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    # embedding: Mapped[Vector | None] = mapped_column(Vector(4096))  # Temporarily disabled until pgvector is properly installed
 
-    # Relationship to chat
     chat: Mapped[ChatModel] = relationship("ChatModel", back_populates="messages")
 
 
@@ -77,24 +70,18 @@ class ConversationAnalysisModel(Base):
     )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    # Conversation goal for optimization
     conversation_goal: Mapped[str | None] = mapped_column(String, nullable=True)
 
-    # Store the branches explored
     branches: Mapped[list[dict]] = mapped_column(JSON, nullable=False)
 
-    # The selected branch index and response
     selected_branch_index: Mapped[int] = mapped_column(sa.Integer, nullable=False)
     selected_response: Mapped[str] = mapped_column(String, nullable=False)
 
-    # Analysis and scoring details
     analysis: Mapped[str] = mapped_column(String, nullable=False)
     scores: Mapped[dict[str, float]] = mapped_column(JSON, nullable=False)
 
-    # MCTS algorithm statistics
     mcts_statistics: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
 
-    # Relationship to chat
     chat: Mapped[ChatModel] = relationship("ChatModel")
 
 
@@ -217,12 +204,10 @@ async def get_chat_history(chat_id: UUID) -> list[ChatMessage]:
 async def delete_chat_session(chat_id: UUID) -> None:
     """Deletes a chat session and all associated messages from the database."""
     async with db.get_session() as session:
-        # First, delete all messages associated with the chat_id
         await session.execute(
             sa.delete(ChatMessageModel).where(ChatMessageModel.chat_id == chat_id)
         )
 
-        # Then, delete the chat session itself
         chat_to_delete = await session.get(ChatModel, chat_id)
         if chat_to_delete:
             await session.delete(chat_to_delete)
