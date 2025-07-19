@@ -5,6 +5,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+
 # C extensions
 *.so
 
@@ -108,4 +109,6 @@ venv.bak/
 .idea/*
 venv/
 .roo
+.kiro
+.claude
 /logs/*

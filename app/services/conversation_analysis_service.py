@@ -18,12 +18,16 @@ from .conversation_analysis import (
     ConversationScorer,
     ConversationSimulator,
 )
+from .conversation_analysis.config_loader import get_mcts_config
 
 
 class ConversationAnalysisService:
     """Service for analyzing conversations using MCTS to find optimal response paths"""
 
     def __init__(self):
+        # Load enhanced MCTS configuration with environment overrides
+        self.mcts_config = get_mcts_config()
+        
         self.llm_service = LLMService(
             base_url=app_settings.LLM_API_BASE_URL,
             api_key=app_settings.LLM_API_KEY,
@@ -36,6 +40,15 @@ class ConversationAnalysisService:
         self.analyzer = ConversationAnalyzer(self.llm_service)
 
         self.mcts = MCTSAlgorithm(self.response_generator, self.simulator, self.scorer)
+        
+        logger.info("ConversationAnalysisService initialized with enhanced MCTS configuration",
+                   extra={
+                       "max_tree_nodes": self.mcts_config.max_tree_nodes,
+                       "timeout_seconds": self.mcts_config.timeout_seconds,
+                       "enable_pruning": self.mcts_config.enable_pruning,
+                       "enable_early_stopping": self.mcts_config.enable_early_stopping,
+                       "enable_checkpointing": self.mcts_config.enable_checkpointing
+                   })
 
     async def analyze_conversation(
         self, request: ConversationAnalysisRequest
@@ -62,12 +75,21 @@ class ConversationAnalysisService:
             request.max_tokens,
         )
 
+        # Create MCTS configuration combining enhanced config with request parameters
         mcts_config = {
             "iterations": request.mcts_iterations,
             "simulation_depth": request.simulation_depth,
-            "exploration_constant": request.exploration_constant,
+            "exploration_constant": request.exploration_constant or self.mcts_config.exploration_constant,
             "goal": request.conversation_goal,
             "max_tokens": request.max_tokens,
+            # Add enhanced configuration parameters
+            "enhanced_config": self.mcts_config,
+            "max_tree_nodes": self.mcts_config.max_tree_nodes,
+            "timeout_seconds": self.mcts_config.timeout_seconds,
+            "enable_pruning": self.mcts_config.enable_pruning,
+            "enable_early_stopping": self.mcts_config.enable_early_stopping,
+            "enable_parallel_processing": self.mcts_config.enable_parallel_processing,
+            "enable_checkpointing": self.mcts_config.enable_checkpointing,
         }
 
         root_nodes, mcts_stats = await self.mcts.run(
