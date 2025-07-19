@@ -3,10 +3,11 @@ from typing import Any
 
 from .node import MCTSNode
 from .tree_operations import TreeOperations
+from .adaptive_exploration import AdaptiveExplorationStrategy
 from ..conversation_analysis.response_generator import ResponseGenerator
 from ..conversation_analysis.simulator import ConversationSimulator
 from ..conversation_analysis.scorer import ConversationScorer
-from ..conversation_analysis.config import MCTSConfig
+from ..conversation_analysis.config import MCTSConfig, EnhancedMCTSConfig
 from ...schema.llm.message import Message
 from ...utils.logger import logger
 
@@ -24,6 +25,7 @@ class MCTSAlgorithm:
         self.simulator = simulator
         self.scorer = scorer
         self.tree_ops = TreeOperations()
+        self.exploration_strategy = None  # Will be initialized when config is available
 
     async def run(
         self,
@@ -35,6 +37,15 @@ class MCTSAlgorithm:
             MCTSNode(response, index=i) for i, response in enumerate(initial_responses)
         ]
 
+        # Initialize exploration strategy if enhanced config is available
+        enhanced_config = config.get("enhanced_config")
+        if enhanced_config and isinstance(enhanced_config, EnhancedMCTSConfig):
+            self.exploration_strategy = AdaptiveExplorationStrategy(enhanced_config)
+            logger.info("Using adaptive exploration strategy")
+        else:
+            self.exploration_strategy = None
+            logger.info("Using fixed exploration constant")
+
         stats = {
             "total_iterations": config["iterations"],
             "nodes_created": len(root_nodes),
@@ -45,8 +56,16 @@ class MCTSAlgorithm:
         }
 
         for iteration in range(config["iterations"]):
+            # Calculate exploration constant for this iteration
+            if self.exploration_strategy:
+                exploration_constant = self.exploration_strategy.get_exploration_constant(
+                    iteration, config["iterations"]
+                )
+            else:
+                exploration_constant = config["exploration_constant"]
+
             nodes_to_process = [
-                (root, await self._select_node(root, config["exploration_constant"]))
+                (root, await self._select_node(root, exploration_constant))
                 for root in root_nodes
             ]
 
