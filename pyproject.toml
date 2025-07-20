@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "conversation-analysis-engine"
+version = "0.1.0"
+description = "Conversational Analysis Engine with MCTS optimization"
+readme = "README.md"
+requires-python = ">=3.10"
+
+[tool.ruff]
+# Assume Python 3.10
+target-version = "py310"
+
+# Same as Black.
+line-length = 88
+
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+
+[tool.ruff.lint]
+# Enable flake8-bugbear (`B`) rules.
+select = ["E", "F", "B", "I", "N", "UP", "ANN", "S", "BLE", "A", "C4", "T20", "PT", "RET", "SIM"]
+ignore = ["ANN401", "E501"]
+
+# Allow autofix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.mccabe]
+# Unlike Flake8, default to a complexity level of 10.
+max-complexity = 10
+
+[tool.ruff.lint.isort]
+known-third-party = ["fastapi", "pydantic", "sqlalchemy", "uvicorn", "psutil"]
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "double"
