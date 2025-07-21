@@ -1,14 +1,15 @@
-from uuid import UUID
 import asyncio
-from fastapi import APIRouter, HTTPException, Depends
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException
+
+from ..db.chat import get_chat_analyses
 from ..schema.conversation_analysis import (
     ConversationAnalysisRequest,
     ConversationAnalysisResponse,
 )
 from ..services.conversation_analysis_service import ConversationAnalysisService
-from ..db.chat import get_chat_analyses
 from ..utils.logger import logger
-
 
 router = APIRouter(prefix="/analysis", tags=["Conversation Analysis"])
 

@@ -1,9 +1,9 @@
-from fastapi import APIRouter, HTTPException, Depends, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel
 
-from ..services.chat_service import ChatService
 from ..db import chat as db
 from ..schema.llm.chat import ChatMessage
+from ..services.chat_service import ChatService
 from ..utils.logger import logger
 
 
@@ -17,9 +17,7 @@ router = APIRouter(prefix="/chats", tags=["Chat"])
 
 
 @router.post("/", response_model=list[ChatMessage])
-async def send_message(
-    request: ChatRequest, service: ChatService = Depends(ChatService)
-):
+async def send_message(request: ChatRequest, service: ChatService = Depends(ChatService)):
     """
     Sends a message to a chat, creating a new session if no chat_id is provided.
     """
@@ -29,9 +27,7 @@ async def send_message(
             "user_id": str(request.user_id),
             "chat_id": str(request.chat_id) if request.chat_id else None,
             "message_length": len(request.message),
-            "message_preview": request.message[:100] + "..."
-            if len(request.message) > 100
-            else request.message,
+            "message_preview": request.message[:100] + "..." if len(request.message) > 100 else request.message,
         },
     )
 

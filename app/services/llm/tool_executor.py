@@ -4,15 +4,15 @@ import json
 import uuid
 from typing import Any
 
-from ...schema.llm.tool import ToolCall
 from ...schema.llm.message import ToolMessage
+from ...schema.llm.tool import ToolCall
+from ...utils.constants import (
+    LOG_CONTENT_PREVIEW_LENGTH,
+    REQUEST_ID_PREFIX_TOOL,
+)
+from ...utils.json_utils import safe_json_dumps
 from ...utils.logger import logger
 from ...utils.tool_registry import tool_registry
-from ...utils.json_utils import safe_json_dumps
-from ...utils.constants import (
-    REQUEST_ID_PREFIX_TOOL,
-    LOG_CONTENT_PREVIEW_LENGTH,
-)
 
 
 class ToolExecutor:
@@ -76,9 +76,7 @@ class ToolExecutor:
             )
 
             try:
-                tool_result = await self._execute_single_tool(
-                    call, execution_id, call_index
-                )
+                tool_result = await self._execute_single_tool(call, execution_id, call_index)
                 results.append(tool_result)
                 successful_calls += 1
 
@@ -95,9 +93,7 @@ class ToolExecutor:
 
             except Exception as e:
                 failed_calls += 1
-                error_result = self._create_error_message(
-                    call, e, execution_id, call_index
-                )
+                error_result = self._create_error_message(call, e, execution_id, call_index)
                 results.append(error_result)
 
         logger.info(
@@ -113,9 +109,7 @@ class ToolExecutor:
 
         return results
 
-    async def _execute_single_tool(
-        self, call: ToolCall, execution_id: str, call_index: int
-    ) -> ToolMessage:
+    async def _execute_single_tool(self, call: ToolCall, execution_id: str, call_index: int) -> ToolMessage:
         """
         Execute a single tool call.
 
@@ -150,13 +144,11 @@ class ToolExecutor:
             raise ValueError(f"Invalid JSON in tool arguments: {e}") from e
 
         if not isinstance(args, dict):
-            raise ValueError(
-                f"Tool arguments must be a dictionary, got {type(args).__name__}"
-            )
+            raise ValueError(f"Tool arguments must be a dictionary, got {type(args).__name__}")
 
         try:
             tool_function = self.registry.get_tool_function(name)
-        except ValueError as e:
+        except ValueError:
             logger.error(
                 "Tool not found in registry",
                 extra={
@@ -261,9 +253,7 @@ class ToolExecutor:
                 "execution_id": execution_id,
                 "call_index": call_index,
                 "tool_call_id": getattr(call, "id", "unknown"),
-                "function_name": getattr(call.function, "name", "unknown")
-                if hasattr(call, "function")
-                else "unknown",
+                "function_name": getattr(call.function, "name", "unknown") if hasattr(call, "function") else "unknown",
                 "error": str(error),
                 "error_type": type(error).__name__,
             },
@@ -272,23 +262,17 @@ class ToolExecutor:
         error_content = {
             "error": str(error),
             "error_type": type(error).__name__,
-            "tool_name": getattr(call.function, "name", "unknown")
-            if hasattr(call, "function")
-            else "unknown",
+            "tool_name": getattr(call.function, "name", "unknown") if hasattr(call, "function") else "unknown",
         }
 
         return ToolMessage(
             role="tool",
             tool_call_id=getattr(call, "id", "unknown"),
-            name=getattr(call.function, "name", "unknown")
-            if hasattr(call, "function")
-            else "unknown",
+            name=getattr(call.function, "name", "unknown") if hasattr(call, "function") else "unknown",
             content=safe_json_dumps(error_content),
         )
 
-    def _preview_content(
-        self, content: Any, max_length: int = LOG_CONTENT_PREVIEW_LENGTH
-    ) -> str:
+    def _preview_content(self, content: Any, max_length: int = LOG_CONTENT_PREVIEW_LENGTH) -> str:
         """
         Create a preview of content for logging.
 

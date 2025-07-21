@@ -1,17 +1,18 @@
+import time
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+
 import uvicorn
+from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
 from app.api import chat as chat_api
-from app.api import user as user_api
 from app.api import conversation_analysis as analysis_api
+from app.api import user as user_api
 from app.db.chat import db
 from app.utils.logger import logger
-from fastapi import Request, status
-from fastapi.responses import JSONResponse
-from fastapi.exceptions import RequestValidationError
-from starlette.exceptions import HTTPException as StarletteHTTPException
-import time
 
 
 @asynccontextmanager

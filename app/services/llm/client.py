@@ -1,25 +1,25 @@
 """LLM client management module."""
 
+import openai
 from openai import AsyncOpenAI
 from tenacity import (
+    RetryCallState,
     retry,
+    retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
-    retry_if_exception_type,
-    RetryCallState,
 )
-import openai
 
 from ...utils.config import app_settings
-from ...utils.logger import logger
 from ...utils.constants import (
-    DEFAULT_MAX_RETRIES,
     DEFAULT_LLM_TIMEOUT,
+    DEFAULT_MAX_RETRIES,
     RETRY_MAX_ATTEMPTS,
-    RETRY_MIN_WAIT,
     RETRY_MAX_WAIT,
+    RETRY_MIN_WAIT,
     RETRY_MULTIPLIER,
 )
+from ...utils.logger import logger
 
 
 class LLMClient:
@@ -43,9 +43,7 @@ class LLMClient:
         """
         self.base_url = base_url or app_settings.LLM_API_BASE_URL
         self.api_key = api_key or app_settings.LLM_API_KEY
-        self.timeout = timeout or float(
-            app_settings.LLM_TIMEOUT_SECONDS or DEFAULT_LLM_TIMEOUT
-        )
+        self.timeout = timeout or float(app_settings.LLM_TIMEOUT_SECONDS or DEFAULT_LLM_TIMEOUT)
         self.max_retries = max_retries
 
         logger.debug(
@@ -79,12 +77,8 @@ class LLMClient:
                 "Retrying LLM request",
                 extra={
                     "attempt": retry_state.attempt_number,
-                    "wait_time": retry_state.next_action.sleep
-                    if retry_state.next_action
-                    else None,
-                    "exception": str(retry_state.outcome.exception())
-                    if retry_state.outcome
-                    else None,
+                    "wait_time": retry_state.next_action.sleep if retry_state.next_action else None,
+                    "exception": str(retry_state.outcome.exception()) if retry_state.outcome else None,
                 },
             )
 
@@ -98,9 +92,7 @@ class LLMClient:
         """
         return retry(
             stop=stop_after_attempt(RETRY_MAX_ATTEMPTS),
-            wait=wait_exponential(
-                multiplier=RETRY_MULTIPLIER, min=RETRY_MIN_WAIT, max=RETRY_MAX_WAIT
-            ),
+            wait=wait_exponential(multiplier=RETRY_MULTIPLIER, min=RETRY_MIN_WAIT, max=RETRY_MAX_WAIT),
             retry=(
                 retry_if_exception_type(openai.RateLimitError)
                 | retry_if_exception_type(openai.APITimeoutError)

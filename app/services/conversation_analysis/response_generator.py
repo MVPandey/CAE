@@ -35,7 +35,7 @@ class ResponseGenerator:
 
             return result["responses"]
 
-        except Exception as e:
+        except Exception:
             logger.error("Failed to generate initial branches", exc_info=True)
             return ResponseConfig.DEFAULT_RESPONSES[:num_branches]
 
@@ -59,18 +59,12 @@ class ResponseGenerator:
             logger.error("Invalid expansion response format")
             return None
 
-        except Exception as e:
+        except Exception:
             logger.error("Failed to generate expansion response", exc_info=True)
             return None
 
-    def _build_initial_branches_prompt(
-        self, num_branches: int, goal: Optional[str]
-    ) -> Message:
-        goal_section = (
-            f"\n<conversation_goal>\nThe user wants to: {goal}\n</conversation_goal>"
-            if goal
-            else ""
-        )
+    def _build_initial_branches_prompt(self, num_branches: int, goal: Optional[str]) -> Message:
+        goal_section = f"\n<conversation_goal>\nThe user wants to: {goal}\n</conversation_goal>" if goal else ""
 
         return Message(
             role="system",
@@ -83,9 +77,7 @@ Return JSON:
 }}""",
         )
 
-    def _build_expansion_prompt(
-        self, existing_responses: list[str], goal: Optional[str]
-    ) -> Message:
+    def _build_expansion_prompt(self, existing_responses: list[str], goal: Optional[str]) -> Message:
         goal_section = f"<goal>Help achieve: {goal}</goal>\n" if goal else ""
 
         return Message(

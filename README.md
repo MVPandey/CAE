@@ -418,6 +418,7 @@ Here's what you get from a conversation analysis:
 ### Prerequisites
 
 - Python 3.10+ (for local development)
+- Poetry (for dependency management)
 - PostgreSQL 14+ (or use Docker)
 - Docker and Docker Compose (for containerized deployment)
 - An OpenAI-compatible LLM API endpoint
@@ -495,15 +496,14 @@ For local development without Docker:
 
 If you prefer manual setup:
 
-1.  Create a virtual environment:
+1.  Install Poetry if you haven't already:
     ```bash
-    python -m venv venv
-    source venv/bin/activate  # On Windows: venv\Scripts\activate
+    curl -sSL https://install.python-poetry.org | python3 -
     ```
 
-2.  Install dependencies:
+2.  Install dependencies using Poetry:
     ```bash
-    pip install -r requirements.txt --no-deps
+    poetry install
     ```
 
 3.  Set up your environment variables:
@@ -514,7 +514,7 @@ If you prefer manual setup:
 
 4.  Run the application:
     ```bash
-    uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     ```
 
 ### Running with VS Code

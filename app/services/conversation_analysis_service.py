@@ -1,23 +1,23 @@
 import time
 from typing import Any
 
-from ..db.chat import get_chat_history, create_conversation_analysis
-from ..schema.llm.message import Message
+from ..db.chat import create_conversation_analysis, get_chat_history
 from ..schema.conversation_analysis import (
     ConversationAnalysisRequest,
     ConversationAnalysisResponse,
 )
+from ..schema.llm.message import Message
 from ..services.llm_service import LLMService
 from ..utils.config import app_settings
-from ..utils.logger import logger
 from ..utils.exceptions import ChatHistoryNotFoundError
-from .mcts import MCTSAlgorithm
+from ..utils.logger import logger
 from .conversation_analysis import (
     ConversationAnalyzer,
-    ResponseGenerator,
     ConversationScorer,
     ConversationSimulator,
+    ResponseGenerator,
 )
+from .mcts import MCTSAlgorithm
 
 
 class ConversationAnalysisService:
@@ -37,9 +37,7 @@ class ConversationAnalysisService:
 
         self.mcts = MCTSAlgorithm(self.response_generator, self.simulator, self.scorer)
 
-    async def analyze_conversation(
-        self, request: ConversationAnalysisRequest
-    ) -> ConversationAnalysisResponse:
+    async def analyze_conversation(self, request: ConversationAnalysisRequest) -> ConversationAnalysisResponse:
         start_time = time.time()
 
         logger.info(
@@ -51,9 +49,7 @@ class ConversationAnalysisService:
         if not history:
             raise ChatHistoryNotFoundError(str(request.chat_id))
 
-        messages = [
-            Message(role=msg.role.value, content=msg.content) for msg in history
-        ]
+        messages = [Message(role=msg.role.value, content=msg.content) for msg in history]
 
         initial_responses = await self.response_generator.generate_initial_branches(
             messages,
@@ -70,9 +66,7 @@ class ConversationAnalysisService:
             "max_tokens": request.max_tokens,
         }
 
-        root_nodes, mcts_stats = await self.mcts.run(
-            messages, initial_responses, mcts_config
-        )
+        root_nodes, mcts_stats = await self.mcts.run(messages, initial_responses, mcts_config)
 
         best_node, best_idx, analysis = await self.analyzer.analyze_best_path(
             root_nodes, messages, request.conversation_goal, request.max_tokens
@@ -82,11 +76,8 @@ class ConversationAnalysisService:
 
         scores = {
             "best_score": best_node.avg_score,
-            "average_score": sum(node.avg_score for node in root_nodes)
-            / len(root_nodes),
-            "score_variance": self._calculate_variance(
-                [node.avg_score for node in root_nodes]
-            ),
+            "average_score": sum(node.avg_score for node in root_nodes) / len(root_nodes),
+            "score_variance": self._calculate_variance([node.avg_score for node in root_nodes]),
         }
 
         db_result = await create_conversation_analysis(

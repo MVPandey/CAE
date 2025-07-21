@@ -3,8 +3,7 @@ from enum import Enum
 from typing import Any, Optional
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, ConfigDict
-from pgvector.sqlalchemy import Vector
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ChatRole(str, Enum):
@@ -35,11 +34,7 @@ class ChatMessage(BaseModel):
     chat_id: UUID = Field(description="Foreign key to Chat.id")
     role: ChatRole
     content: str
-    tool_calls: Optional[dict[str, Any]] = Field(
-        default=None, description="JSONB field"
-    )
+    tool_calls: Optional[dict[str, Any]] = Field(default=None, description="JSONB field")
     tool_call_id: Optional[str] = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    embedding: Optional[float] = Field(
-        default=None, description="Vector with 4096 dimensions"
-    )
+    embedding: Optional[float] = Field(default=None, description="Vector with 4096 dimensions")
