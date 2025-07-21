@@ -29,7 +29,12 @@ class InterceptHandler(logging.Handler):
 def format_record(record: dict[str, Any]) -> str:
     """Format log records with extra fields displayed inline."""
 
-    base = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
+    base = (
+        "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
+        "<level>{level: <8}</level> | "
+        "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
+        "<level>{message}</level>"
+    )
 
     extra = record.get("extra", {})
     if extra:
@@ -163,6 +168,51 @@ logging.getLogger("uvicorn.access").setLevel(logging.INFO)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
+class LoggerWrapper:
+    """
+    A wrapper class for loguru logger that adds support for 'extra' parameter
+    without modifying the original logger instance.
+    """
+
+    def __init__(self, wrapped_logger):
+        self._logger = wrapped_logger
+
+    def _log_with_extra(self, method_name, message, *args, extra=None, **kwargs):
+        """Helper method to handle logging with optional extra context."""
+        if extra:
+            bound_logger = self._logger.bind(**extra)
+            getattr(bound_logger, method_name)(message, *args, **kwargs)
+        else:
+            getattr(self._logger, method_name)(message, *args, **kwargs)
+
+    def info(self, message, *args, extra=None, **kwargs):
+        self._log_with_extra("info", message, *args, extra=extra, **kwargs)
+
+    def debug(self, message, *args, extra=None, **kwargs):
+        self._log_with_extra("debug", message, *args, extra=extra, **kwargs)
+
+    def warning(self, message, *args, extra=None, **kwargs):
+        self._log_with_extra("warning", message, *args, extra=extra, **kwargs)
+
+    def error(self, message, *args, extra=None, **kwargs):
+        self._log_with_extra("error", message, *args, extra=extra, **kwargs)
+
+    def critical(self, message, *args, extra=None, **kwargs):
+        self._log_with_extra("critical", message, *args, extra=extra, **kwargs)
+
+    def bind(self, **context):
+        """Create a new logger instance with bound context."""
+        return LoggerWrapper(self._logger.bind(**context))
+
+    def opt(self, **options):
+        """Pass through to the wrapped logger's opt method."""
+        return self._logger.opt(**options)
+
+    def __getattr__(self, name):
+        """Delegate any other attributes/methods to the wrapped logger."""
+        return getattr(self._logger, name)
+
+
 def get_logger(**context):
     """
     Get a logger instance with bound context.
@@ -175,41 +225,11 @@ def get_logger(**context):
         **context: Key-value pairs to bind to the logger
 
     Returns:
-        Logger instance with bound context
+        LoggerWrapper instance with bound context
     """
-    return logger.bind(**context)
+    return LoggerWrapper(logger.bind(**context))
 
 
-original_info = logger.info
-original_debug = logger.debug
-original_warning = logger.warning
-original_error = logger.error
-original_critical = logger.critical
-
-
-def _log_with_extra(level_func, message, *args, extra=None, **kwargs):
-    if extra:
-        bound_logger = logger.bind(**extra)
-        getattr(bound_logger, level_func.__name__)(message, *args, **kwargs)
-    else:
-        level_func(message, *args, **kwargs)
-
-
-logger.info = lambda message, *args, extra=None, **kwargs: _log_with_extra(
-    original_info, message, *args, extra=extra, **kwargs
-)
-logger.debug = lambda message, *args, extra=None, **kwargs: _log_with_extra(
-    original_debug, message, *args, extra=extra, **kwargs
-)
-logger.warning = lambda message, *args, extra=None, **kwargs: _log_with_extra(
-    original_warning, message, *args, extra=extra, **kwargs
-)
-logger.error = lambda message, *args, extra=None, **kwargs: _log_with_extra(
-    original_error, message, *args, extra=extra, **kwargs
-)
-logger.critical = lambda message, *args, extra=None, **kwargs: _log_with_extra(
-    original_critical, message, *args, extra=extra, **kwargs
-)
-
+logger = LoggerWrapper(logger)
 
 __all__ = ["logger", "get_logger"]
