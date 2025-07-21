@@ -109,3 +109,7 @@ venv.bak/
 venv/
 .roo
 /logs/*
+.mcp.json
+.claude
+.kiro
+.ruff_cache
