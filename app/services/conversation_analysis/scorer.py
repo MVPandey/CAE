@@ -1,5 +1,5 @@
 import json
-from typing import Optional, Any
+from typing import Any, Optional
 
 from ...schema.llm.message import Message
 from ...services.llm_service import LLMService
@@ -29,13 +29,11 @@ class ConversationScorer:
 
             return self._validate_scoring_result(result)
 
-        except Exception as e:
+        except Exception:
             logger.error("Failed to score simulation", exc_info=True)
             return self._get_default_scores()
 
-    def _build_scoring_prompt(
-        self, simulation_data: dict[str, Any], goal: Optional[str]
-    ) -> Message:
+    def _build_scoring_prompt(self, simulation_data: dict[str, Any], goal: Optional[str]) -> Message:
         goal_section = ""
         if goal:
             goal_section = f"""
@@ -89,9 +87,7 @@ Return JSON:
 
     def _get_default_scores(self) -> dict[str, Any]:
         return {
-            "general_metrics": {
-                metric: 0.5 for metric in ScoringConfig.GENERAL_METRICS
-            },
+            "general_metrics": {metric: 0.5 for metric in ScoringConfig.GENERAL_METRICS},
             "goal_metrics": {},
             "overall_score": 0.5,
         }

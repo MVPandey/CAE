@@ -5,9 +5,7 @@ from typing import Optional
 class MCTSNode:
     """Node in the Monte Carlo Tree Search tree"""
 
-    def __init__(
-        self, response: str, parent: Optional["MCTSNode"] = None, index: int = 0
-    ):
+    def __init__(self, response: str, parent: Optional["MCTSNode"] = None, index: int = 0):
         self.response = response
         self.parent = parent
         self.children: list[MCTSNode] = []
@@ -36,9 +34,7 @@ class MCTSNode:
         if not self.children:
             raise ValueError("No children to select from")
 
-        return max(
-            self.children, key=lambda c: self._ucb1_score(c, exploration_constant)
-        )
+        return max(self.children, key=lambda c: self._ucb1_score(c, exploration_constant))
 
     def update(self, score: float) -> None:
         self.visits += 1
@@ -50,7 +46,5 @@ class MCTSNode:
             return float("inf")
 
         exploitation = child.avg_score
-        exploration = exploration_constant * math.sqrt(
-            2 * math.log(self.visits) / child.visits
-        )
+        exploration = exploration_constant * math.sqrt(2 * math.log(self.visits) / child.visits)
         return exploitation + exploration

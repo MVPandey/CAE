@@ -1,12 +1,12 @@
 import json
 from typing import Optional
 
-from ...schema.llm.message import Message
 from ...schema.conversation_analysis import ConversationBranch
+from ...schema.llm.message import Message
 from ...services.llm_service import LLMService
-from ..mcts import MCTSNode
 from ...utils.logger import logger
-from .config import ScoringConfig, ResponseConfig
+from ..mcts import MCTSNode
+from .config import ResponseConfig, ScoringConfig
 
 
 class ConversationAnalyzer:
@@ -25,15 +25,11 @@ class ConversationAnalyzer:
         best_root = self._select_best_node(root_nodes)
         best_idx = root_nodes.index(best_root)
 
-        analysis = await self._generate_analysis(
-            best_root, root_nodes, original_messages, goal, max_tokens
-        )
+        analysis = await self._generate_analysis(best_root, root_nodes, original_messages, goal, max_tokens)
 
         return best_root, best_idx, analysis
 
-    def convert_to_branches(
-        self, root_nodes: list[MCTSNode]
-    ) -> list[ConversationBranch]:
+    def convert_to_branches(self, root_nodes: list[MCTSNode]) -> list[ConversationBranch]:
         return [
             ConversationBranch(
                 response=node.response,
@@ -56,8 +52,7 @@ class ConversationAnalyzer:
             root_nodes,
             key=lambda n: (
                 n.avg_score * ScoringConfig.SCORE_WEIGHT_QUALITY
-                + (n.visits / total_visits if total_visits > 0 else 0)
-                * ScoringConfig.SCORE_WEIGHT_VISITS
+                + (n.visits / total_visits if total_visits > 0 else 0) * ScoringConfig.SCORE_WEIGHT_VISITS
             ),
         )
 
@@ -79,25 +74,19 @@ class ConversationAnalyzer:
             )
             return response.content
 
-        except Exception as e:
+        except Exception:
             logger.error("Failed to generate analysis", exc_info=True)
             return self._get_default_analysis(best_node, all_nodes.index(best_node))
 
-    def _build_analysis_prompt(
-        self, best_node: MCTSNode, all_nodes: list[MCTSNode], goal: Optional[str]
-    ) -> Message:
-        goal_section = (
-            f"<conversation_goal>{goal}</conversation_goal>\n" if goal else ""
-        )
+    def _build_analysis_prompt(self, best_node: MCTSNode, all_nodes: list[MCTSNode], goal: Optional[str]) -> Message:
+        goal_section = f"<conversation_goal>{goal}</conversation_goal>\n" if goal else ""
 
         options_data = [
             {
                 "response": node.response[:100] + "...",
                 "score": node.avg_score,
                 "visits": node.visits,
-                "key_strength": max(
-                    node.general_metrics.items(), key=lambda x: x[1], default=("", 0)
-                ),
+                "key_strength": max(node.general_metrics.items(), key=lambda x: x[1], default=("", 0)),
             }
             for node in all_nodes
         ]

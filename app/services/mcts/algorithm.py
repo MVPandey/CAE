@@ -1,14 +1,13 @@
 import asyncio
 from typing import Any
 
+from ...schema.llm.message import Message
+from ..conversation_analysis.config import MCTSConfig
+from ..conversation_analysis.response_generator import ResponseGenerator
+from ..conversation_analysis.scorer import ConversationScorer
+from ..conversation_analysis.simulator import ConversationSimulator
 from .node import MCTSNode
 from .tree_operations import TreeOperations
-from ..conversation_analysis.response_generator import ResponseGenerator
-from ..conversation_analysis.simulator import ConversationSimulator
-from ..conversation_analysis.scorer import ConversationScorer
-from ..conversation_analysis.config import MCTSConfig
-from ...schema.llm.message import Message
-from ...utils.logger import logger
 
 
 class MCTSAlgorithm:
@@ -31,9 +30,7 @@ class MCTSAlgorithm:
         initial_responses: list[str],
         config: dict[str, Any],
     ) -> tuple[list[MCTSNode], dict[str, Any]]:
-        root_nodes = [
-            MCTSNode(response, index=i) for i, response in enumerate(initial_responses)
-        ]
+        root_nodes = [MCTSNode(response, index=i) for i, response in enumerate(initial_responses)]
 
         stats = {
             "total_iterations": config["iterations"],
@@ -46,14 +43,10 @@ class MCTSAlgorithm:
 
         for iteration in range(config["iterations"]):
             nodes_to_process = [
-                (root, await self._select_node(root, config["exploration_constant"]))
-                for root in root_nodes
+                (root, await self._select_node(root, config["exploration_constant"])) for root in root_nodes
             ]
 
-            tasks = [
-                self._expand_and_simulate(base_messages, node, config)
-                for _, node in nodes_to_process
-            ]
+            tasks = [self._expand_and_simulate(base_messages, node, config) for _, node in nodes_to_process]
 
             results = await asyncio.gather(*tasks)
             stats["parallel_evaluations"] += len(tasks)
@@ -70,15 +63,11 @@ class MCTSAlgorithm:
                 pruned = self.tree_ops.prune_branches(root_nodes)
                 stats["pruned_branches"] += pruned
 
-        stats["average_depth_explored"] = self.tree_ops.calculate_average_depth(
-            root_nodes
-        )
+        stats["average_depth_explored"] = self.tree_ops.calculate_average_depth(root_nodes)
 
         return root_nodes, stats
 
-    async def _select_node(
-        self, root: MCTSNode, exploration_constant: float
-    ) -> MCTSNode:
+    async def _select_node(self, root: MCTSNode, exploration_constant: float) -> MCTSNode:
         node = root
         while node.children and node.is_fully_expanded():
             node = node.best_child(exploration_constant)
@@ -115,9 +104,7 @@ class MCTSAlgorithm:
         node.sub_history = simulation_data["simulation"]
         node.simulated_reactions = simulation_data["user_reactions"]
 
-        extended_sim_messages = extended_messages + [
-            Message(**msg) for msg in node.sub_history
-        ]
+        extended_sim_messages = extended_messages + [Message(**msg) for msg in node.sub_history]
 
         score_data = await self.scorer.score_simulation(
             extended_sim_messages,
@@ -131,9 +118,7 @@ class MCTSAlgorithm:
 
         return score_data["overall_score"], new_children
 
-    def _build_conversation_path(
-        self, base_messages: list[Message], node: MCTSNode
-    ) -> list[Message]:
+    def _build_conversation_path(self, base_messages: list[Message], node: MCTSNode) -> list[Message]:
         path = []
         current = node
 

@@ -1,6 +1,7 @@
-from typing import Literal, Any, Callable, ClassVar
-from pydantic import BaseModel, Field
 from abc import ABC, abstractmethod
+from typing import Any, Callable, ClassVar, Literal
+
+from pydantic import BaseModel, Field
 
 
 class ToolParameterProperty(BaseModel):
@@ -8,23 +9,15 @@ class ToolParameterProperty(BaseModel):
     Represents a property in a tool parameter according to OpenAI's schema
     """
 
-    type: str = Field(
-        ..., description="The type of the parameter (string, integer, etc)"
-    )
+    type: str = Field(..., description="The type of the parameter (string, integer, etc)")
     description: str = Field(..., description="Description of what the parameter does")
-    enum: list[str] | None = Field(
-        None, description="List of allowed values for enum types"
-    )
+    enum: list[str] | None = Field(None, description="List of allowed values for enum types")
     minimum: int | None = Field(None, description="Minimum value for numeric types")
     maximum: int | None = Field(None, description="Maximum value for numeric types")
     default: Any | None = Field(None, description="Default value for the parameter")
     items: dict[str, Any] | None = Field(None, description="Schema for array items")
-    properties: dict[str, Any] | None = Field(
-        None, description="Nested object properties"
-    )
-    required: list[str] | None = Field(
-        None, description="Required fields for nested objects"
-    )
+    properties: dict[str, Any] | None = Field(None, description="Nested object properties")
+    required: list[str] | None = Field(None, description="Required fields for nested objects")
 
 
 class ToolFunctionParameters(BaseModel):
@@ -33,12 +26,8 @@ class ToolFunctionParameters(BaseModel):
     """
 
     type: Literal["object"] = "object"
-    properties: dict[str, ToolParameterProperty] = Field(
-        ..., description="Dictionary of parameter properties"
-    )
-    required: list[str] | None = Field(
-        None, description="List of required parameter names"
-    )
+    properties: dict[str, ToolParameterProperty] = Field(..., description="Dictionary of parameter properties")
+    required: list[str] | None = Field(None, description="List of required parameter names")
 
 
 class ToolFunction(BaseModel):
@@ -48,9 +37,7 @@ class ToolFunction(BaseModel):
 
     name: str = Field(..., description="The name of the function to be called")
     description: str = Field(..., description="A description of what the function does")
-    parameters: ToolFunctionParameters = Field(
-        ..., description="The parameters the function accepts"
-    )
+    parameters: ToolFunctionParameters = Field(..., description="The parameters the function accepts")
 
 
 class ToolSchema(BaseModel):

@@ -6,11 +6,11 @@ For new installations, the tables will be created automatically with the correct
 """
 
 import asyncio
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy import text
-import sys
 import os
-from uuid import uuid4
+import sys
+
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import create_async_engine
 
 # Add parent directory to path to import app modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -32,8 +32,8 @@ async def run_migration():
             result = await conn.execute(
                 text("""
                 SELECT EXISTS (
-                    SELECT FROM information_schema.tables 
-                    WHERE table_schema = 'public' 
+                    SELECT FROM information_schema.tables
+                    WHERE table_schema = 'public'
                     AND table_name = 'user'
                 );
             """)
@@ -46,9 +46,9 @@ async def run_migration():
                 # Check if name column exists
                 result = await conn.execute(
                     text("""
-                    SELECT column_name 
-                    FROM information_schema.columns 
-                    WHERE table_name = 'user' 
+                    SELECT column_name
+                    FROM information_schema.columns
+                    WHERE table_name = 'user'
                     AND column_name = 'name';
                 """)
                 )
@@ -58,7 +58,7 @@ async def run_migration():
                     logger.info("Adding name column to user table...")
                     await conn.execute(
                         text("""
-                        ALTER TABLE "user" 
+                        ALTER TABLE "user"
                         ADD COLUMN name VARCHAR(255) NOT NULL DEFAULT 'Unnamed User';
                     """)
                     )
@@ -67,9 +67,9 @@ async def run_migration():
                 # Check if created_at column exists
                 result = await conn.execute(
                     text("""
-                    SELECT column_name 
-                    FROM information_schema.columns 
-                    WHERE table_name = 'user' 
+                    SELECT column_name
+                    FROM information_schema.columns
+                    WHERE table_name = 'user'
                     AND column_name = 'created_at';
                 """)
                 )
@@ -79,7 +79,7 @@ async def run_migration():
                     logger.info("Adding created_at column to user table...")
                     await conn.execute(
                         text("""
-                        ALTER TABLE "user" 
+                        ALTER TABLE "user"
                         ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
                     """)
                     )
@@ -108,9 +108,7 @@ async def run_migration():
             existing_user_ids = [row[0] for row in result.fetchall()]
 
             if existing_user_ids:
-                logger.info(
-                    f"Found {len(existing_user_ids)} unique user_ids in existing chats"
-                )
+                logger.info(f"Found {len(existing_user_ids)} unique user_ids in existing chats")
 
                 # Create placeholder users for existing chats
                 logger.info("Creating placeholder users for existing chats...")
@@ -140,17 +138,15 @@ async def run_migration():
 
                 logger.info("Placeholder users created successfully")
             else:
-                logger.info(
-                    "No existing chats found, skipping placeholder user creation"
-                )
+                logger.info("No existing chats found, skipping placeholder user creation")
 
             # Check if foreign key constraint already exists
             logger.info("Checking existing constraints...")
             result = await conn.execute(
                 text("""
-                SELECT constraint_name 
-                FROM information_schema.table_constraints 
-                WHERE table_name = 'chat' 
+                SELECT constraint_name
+                FROM information_schema.table_constraints
+                WHERE table_name = 'chat'
                 AND constraint_type = 'FOREIGN KEY'
                 AND constraint_name LIKE '%user_id%';
             """)
@@ -162,10 +158,10 @@ async def run_migration():
                 logger.info("Adding foreign key constraint to chat table...")
                 await conn.execute(
                     text("""
-                    ALTER TABLE chat 
-                    ADD CONSTRAINT chat_user_id_fkey 
-                    FOREIGN KEY (user_id) 
-                    REFERENCES "user"(id) 
+                    ALTER TABLE chat
+                    ADD CONSTRAINT chat_user_id_fkey
+                    FOREIGN KEY (user_id)
+                    REFERENCES "user"(id)
                     ON DELETE CASCADE;
                 """)
                 )
@@ -179,7 +175,7 @@ async def run_migration():
             # First drop existing constraint if it exists
             await conn.execute(
                 text("""
-                ALTER TABLE chat_message 
+                ALTER TABLE chat_message
                 DROP CONSTRAINT IF EXISTS chat_message_chat_id_fkey;
             """)
             )
@@ -187,10 +183,10 @@ async def run_migration():
             # Then add the new constraint with CASCADE
             await conn.execute(
                 text("""
-                ALTER TABLE chat_message 
-                ADD CONSTRAINT chat_message_chat_id_fkey 
-                FOREIGN KEY (chat_id) 
-                REFERENCES chat(id) 
+                ALTER TABLE chat_message
+                ADD CONSTRAINT chat_message_chat_id_fkey
+                FOREIGN KEY (chat_id)
+                REFERENCES chat(id)
                 ON DELETE CASCADE;
             """)
             )

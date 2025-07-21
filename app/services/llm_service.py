@@ -6,17 +6,17 @@ from typing import Any
 
 from openai.types.chat.chat_completion import ChatCompletion
 
+from ..schema.llm.message import Message, ToolMessage
+from ..schema.llm.tool import ToolCall
 from ..utils.config import app_settings
-from ..utils.logger import logger
-from ..utils.exceptions import LLMException
-from ..utils.tool_registry import tool_registry
-from ..utils.json_utils import clean_json_response
 from ..utils.constants import (
     DEFAULT_MAX_TOKENS,
     REQUEST_ID_PREFIX_LLM,
 )
-from ..schema.llm.message import Message, ToolMessage
-from ..schema.llm.tool import ToolCall
+from ..utils.exceptions import LLMException
+from ..utils.json_utils import clean_json_response
+from ..utils.logger import logger
+from ..utils.tool_registry import tool_registry
 from .llm import LLMClient, ToolExecutor
 
 
@@ -327,9 +327,7 @@ class LLMService:
             },
         )
 
-        tool_results = await self.tool_executor.execute_tool_calls(
-            tool_calls, execution_id=request_id
-        )
+        tool_results = await self.tool_executor.execute_tool_calls(tool_calls, execution_id=request_id)
 
         message_dicts = [msg.model_dump() for msg in messages]
         message_dicts.append(initial_completion.choices[0].message.model_dump())
@@ -399,9 +397,7 @@ class LLMService:
                     "JSON response parsed successfully",
                     extra={
                         "request_id": request_id,
-                        "response_keys": list(parsed_response.keys())
-                        if isinstance(parsed_response, dict)
-                        else None,
+                        "response_keys": list(parsed_response.keys()) if isinstance(parsed_response, dict) else None,
                     },
                 )
                 return parsed_response

@@ -4,8 +4,8 @@ import json
 import re
 from typing import Any
 
-from ..utils.logger import logger
 from ..utils.exceptions import LLMException
+from ..utils.logger import logger
 
 
 def clean_json_response(response: str) -> dict[str, Any]:
@@ -44,9 +44,7 @@ def clean_json_response(response: str) -> dict[str, Any]:
             "Failed to parse JSON from markdown block",
             extra={
                 "error": str(e),
-                "response_preview": response[:200] + "..."
-                if len(response) > 200
-                else response,
+                "response_preview": response[:200] + "..." if len(response) > 200 else response,
             },
         )
 
@@ -62,17 +60,13 @@ def clean_json_response(response: str) -> dict[str, Any]:
             "Failed to parse JSON after cleaning attempts",
             extra={
                 "error": str(e),
-                "original_response": response[:500] + "..."
-                if len(response) > 500
-                else response,
+                "original_response": response[:500] + "..." if len(response) > 500 else response,
             },
         )
 
     raise LLMException(
-        f"Failed to parse JSON response after all attempts",
-        details={
-            "response": response[:1000] + "..." if len(response) > 1000 else response
-        },
+        "Failed to parse JSON response after all attempts",
+        details={"response": response[:1000] + "..." if len(response) > 1000 else response},
     )
 
 

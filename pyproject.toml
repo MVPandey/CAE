@@ -1,0 +1,42 @@
+[tool.poetry]
+name = "ConversationalAnalysisEngine"
+version = "0.0.1"
+description = ""
+authors = ["Manav Pandey <manavpandey1999@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.100.1"
+sqlalchemy = "^2.0.41"
+pgvector = "^0.4.1"
+openai = "^1.86.0"
+loguru = "^0.7.3"
+uvicorn = "^0.23.2"
+python-dotenv = "^1.0.0"
+pydantic = "^2.11.7"
+pydantic-settings = "^2.9.1"
+asyncpg = "^0.30.0"
+tenacity = "^9.1.2"
+greenlet = "^3.2.3"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.8.6"
+pytest = "^8.3.5"
+pytest-asyncio = "^0.25.2"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I"]
+ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

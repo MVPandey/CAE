@@ -1,11 +1,11 @@
 from uuid import UUID
+
 from fastapi import APIRouter, HTTPException, Response, status
 
 from ..db import chat as db
-from ..schema.user import User, UserCreate
 from ..schema.llm.chat import Chat
+from ..schema.user import User, UserCreate
 from ..utils.logger import logger
-
 
 router = APIRouter(prefix="/users", tags=["User"])
 

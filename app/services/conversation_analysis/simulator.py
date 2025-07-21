@@ -1,4 +1,4 @@
-from typing import Optional, Any
+from typing import Any, Optional
 
 from ...schema.llm.message import Message
 from ...services.llm_service import LLMService
@@ -29,14 +29,12 @@ class ConversationSimulator:
                 "user_reactions": result.get("user_reactions", []),
             }
 
-        except Exception as e:
+        except Exception:
             logger.error("Failed to simulate conversation", exc_info=True)
             return {"simulation": [], "user_reactions": []}
 
     def _build_simulation_prompt(self, depth: int, goal: Optional[str]) -> Message:
-        goal_section = (
-            f"<conversation_goal>{goal}</conversation_goal>\n" if goal else ""
-        )
+        goal_section = f"<conversation_goal>{goal}</conversation_goal>\n" if goal else ""
 
         return Message(
             role="system",

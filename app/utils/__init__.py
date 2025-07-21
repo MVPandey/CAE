@@ -2,9 +2,9 @@
 
 from .config import app_settings
 from .constants import (
-    DEFAULT_MAX_TOKENS,
     DEFAULT_LLM_TIMEOUT,
     DEFAULT_MAX_RETRIES,
+    DEFAULT_MAX_TOKENS,
     REQUEST_ID_PREFIX_LLM,
     REQUEST_ID_PREFIX_TOOL,
 )

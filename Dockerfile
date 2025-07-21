@@ -9,17 +9,24 @@ RUN apt-get update && apt-get install -y \
     g++ \
     libpq-dev \
     python3-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Poetry
+RUN curl -sSL https://install.python-poetry.org | python3 -
+ENV PATH="/root/.local/bin:$PATH"
 
 # Set working directory
 WORKDIR /build
 
-# Copy requirements first for better caching
-COPY requirements.txt .
+# Copy poetry files first for better caching
+COPY pyproject.toml poetry.lock* ./
 
-# Create wheels for all dependencies
-RUN pip install --upgrade pip && \
-    pip wheel --no-cache-dir --no-deps -r requirements.txt
+# Configure poetry to not create virtual environment
+RUN poetry config virtualenvs.create false
+
+# Export requirements for final stage
+RUN poetry export -f requirements.txt --output requirements.txt --without-hashes
 
 # Stage 2: Runtime
 FROM python:3.12-slim
@@ -37,13 +44,13 @@ RUN groupadd -r cae && useradd -r -g cae cae
 WORKDIR /app
 
 # Copy application code
-COPY requirements.txt .
+COPY --from=builder /build/requirements.txt .
 COPY app/ ./app/
 COPY migrations/ ./migrations/
 
 # Install dependencies
 RUN pip install --upgrade pip && \
-    pip install --no-cache-dir --no-deps -r requirements.txt
+    pip install --no-cache-dir -r requirements.txt
 
 # Change ownership to non-root user
 RUN chown -R cae:cae /app

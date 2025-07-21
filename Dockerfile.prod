@@ -10,13 +10,24 @@ RUN apt-get update && apt-get install -y \
     g++ \
     libpq-dev \
     python3-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Poetry
+RUN curl -sSL https://install.python-poetry.org | python3 -
+ENV PATH="/root/.local/bin:$PATH"
 
 # Set working directory
 WORKDIR /build
 
-# Copy requirements first for better caching
-COPY requirements.txt .
+# Copy poetry files first for better caching
+COPY pyproject.toml poetry.lock* ./
+
+# Configure poetry to not create virtual environment
+RUN poetry config virtualenvs.create false
+
+# Export requirements for final stage
+RUN poetry export -f requirements.txt --output requirements.txt --without-hashes --without dev
 
 # Stage 2: Runtime
 FROM python:3.12-slim
@@ -40,13 +51,13 @@ RUN groupadd -r -g 1000 cae && \
 WORKDIR /app
 
 # Copy application code with proper ownership
-COPY --chown=cae:cae requirements.txt .
+COPY --from=builder --chown=cae:cae /build/requirements.txt .
 COPY --chown=cae:cae app/ ./app/
 COPY --chown=cae:cae migrations/ ./migrations/
 
 # Install dependencies
 RUN pip install --upgrade pip && \
-    pip install --no-cache-dir --no-deps -r requirements.txt && \
+    pip install --no-cache-dir -r requirements.txt && \
     # Clean up build dependencies
     apt-get purge -y gcc g++ python3-dev && \
     apt-get autoremove -y && \

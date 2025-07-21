@@ -5,10 +5,11 @@ This script adds support for goal-based conversation optimization and MCTS algor
 """
 
 import asyncio
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy import text
-import sys
 import os
+import sys
+
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import create_async_engine
 
 # Add parent directory to path to import app modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -30,8 +31,8 @@ async def run_migration():
             result = await conn.execute(
                 text("""
                 SELECT EXISTS (
-                    SELECT FROM information_schema.tables 
-                    WHERE table_schema = 'public' 
+                    SELECT FROM information_schema.tables
+                    WHERE table_schema = 'public'
                     AND table_name = 'conversation_analysis'
                 );
             """)
@@ -48,21 +49,19 @@ async def run_migration():
             logger.info("Checking if conversation_goal column exists...")
             result = await conn.execute(
                 text("""
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_name = 'conversation_analysis' 
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_name = 'conversation_analysis'
                 AND column_name = 'conversation_goal';
             """)
             )
             goal_column_exists = result.fetchone() is not None
 
             if not goal_column_exists:
-                logger.info(
-                    "Adding conversation_goal column to conversation_analysis table..."
-                )
+                logger.info("Adding conversation_goal column to conversation_analysis table...")
                 await conn.execute(
                     text("""
-                    ALTER TABLE conversation_analysis 
+                    ALTER TABLE conversation_analysis
                     ADD COLUMN conversation_goal VARCHAR DEFAULT NULL;
                 """)
                 )
@@ -74,21 +73,19 @@ async def run_migration():
             logger.info("Checking if mcts_statistics column exists...")
             result = await conn.execute(
                 text("""
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_name = 'conversation_analysis' 
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_name = 'conversation_analysis'
                 AND column_name = 'mcts_statistics';
             """)
             )
             mcts_stats_column_exists = result.fetchone() is not None
 
             if not mcts_stats_column_exists:
-                logger.info(
-                    "Adding mcts_statistics column to conversation_analysis table..."
-                )
+                logger.info("Adding mcts_statistics column to conversation_analysis table...")
                 await conn.execute(
                     text("""
-                    ALTER TABLE conversation_analysis 
+                    ALTER TABLE conversation_analysis
                     ADD COLUMN mcts_statistics JSONB NOT NULL DEFAULT '{}'::jsonb;
                 """)
                 )
@@ -98,7 +95,7 @@ async def run_migration():
                 logger.info("Updating existing rows with default MCTS statistics...")
                 await conn.execute(
                     text("""
-                    UPDATE conversation_analysis 
+                    UPDATE conversation_analysis
                     SET mcts_statistics = '{
                         "total_iterations": 0,
                         "nodes_created": 0,
