@@ -120,17 +120,20 @@ class TestDatabase:
         assert db.async_session_maker == mock_sessionmaker.return_value
 
     @pytest.mark.asyncio
-    async def test_create_db_and_tables(self):
+    @patch("app.db.chat.create_async_engine")
+    async def test_create_db_and_tables(self, mock_create_engine):
         """Test create_db_and_tables method."""
-        db = Database("postgresql+asyncpg://test:test@localhost:5432/testdb")
-
-        # Mock the engine
+        # Create mock engine with begin method
+        mock_engine = AsyncMock()
         mock_conn = AsyncMock()
         mock_begin = AsyncMock()
         mock_begin.__aenter__.return_value = mock_conn
         mock_begin.__aexit__.return_value = None
-        db.engine.begin = MagicMock(return_value=mock_begin)
+        # Make begin() method that returns an async context manager
+        mock_engine.begin = MagicMock(return_value=mock_begin)
+        mock_create_engine.return_value = mock_engine
 
+        db = Database("postgresql+asyncpg://test:test@localhost:5432/testdb")
         await db.create_db_and_tables()
 
         # Verify metadata.create_all was called

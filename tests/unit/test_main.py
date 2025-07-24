@@ -83,10 +83,10 @@ class TestApp:
         assert any("/users" in route for route in routes)
 
         # Check chat endpoints (from router)
-        assert any("/chat" in route for route in routes)
+        assert any("/chats" in route for route in routes)
 
         # Check analysis endpoints (from router)
-        assert any("/analyze" in route for route in routes)
+        assert any("/analysis" in route for route in routes)
 
 
 class TestMiddleware:

@@ -217,7 +217,8 @@ class TestToolSchema:
         schema = ToolSchema(function=func)
 
         # Attempt to modify should raise an error
-        with pytest.raises(AttributeError):
+        # In Pydantic v2, frozen models raise ValidationError when trying to set attributes
+        with pytest.raises(ValidationError, match="Instance is frozen"):
             schema.type = "something_else"
 
     def test_tool_schema_example(self):

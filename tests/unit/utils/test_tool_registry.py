@@ -61,8 +61,11 @@ class TestToolRegistry:
         mock_subclasses.return_value = [MockTool]
 
         registry = ToolRegistry()
+        # Initialize the tools dict before collecting
+        registry._tools = {}
         registry._collect_tools()
 
+        assert len(registry._tools) == 1
         assert "MockTool" in registry._tools
         assert registry._tools["MockTool"]["class"] == MockTool
         assert registry._tools["MockTool"]["schema"] == MockTool.tool_schema
@@ -76,9 +79,12 @@ class TestToolRegistry:
         mock_subclasses.return_value = [MockTool, BrokenTool]
 
         registry = ToolRegistry()
+        # Initialize the tools dict before collecting
+        registry._tools = {}
         registry._collect_tools()
 
         # Should collect working tool
+        assert len(registry._tools) == 1
         assert "MockTool" in registry._tools
 
         # Should not collect broken tool
@@ -87,7 +93,7 @@ class TestToolRegistry:
         # Should log error for broken tool
         mock_logger.error.assert_called()
         error_call = mock_logger.error.call_args
-        assert "Failed to collect tool BrokenTool" in error_call[0]
+        assert "Failed to collect tool BrokenTool" in error_call[0][0]
 
     @patch("app.utils.tool_registry.AbstractTool.__subclasses__")
     def test_get_tool(self, mock_subclasses):
@@ -209,6 +215,8 @@ class TestToolRegistry:
         mock_subclasses.return_value = [MockTool]
 
         registry = ToolRegistry()
+        # Initialize the tools dict before collecting
+        registry._tools = {}
         registry._collect_tools()
 
         # Should log each collected tool
