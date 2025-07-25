@@ -4,14 +4,14 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from app.schema.llm.tool import AbstractTool
+from app.schema.llm.tool import AbstractTool, ToolSchema
 from app.utils.tool_registry import ToolRegistry, tool_registry
 
 
 class MockTool(AbstractTool):
     """Mock tool for testing."""
 
-    tool_schema = Mock()
+    tool_schema = Mock(spec=ToolSchema)
     tool_schema.model_dump.return_value = {"name": "MockTool", "description": "Mock tool"}
 
     @classmethod
@@ -23,7 +23,7 @@ class MockTool(AbstractTool):
 class BrokenTool(AbstractTool):
     """Tool that raises exception during collection."""
 
-    tool_schema = Mock()
+    tool_schema = Mock(spec=ToolSchema)
 
     @classmethod
     def tool_function(cls):

@@ -380,11 +380,15 @@ class TestMCTSAlgorithm:
         self, mcts_algorithm, base_messages, initial_responses, mcts_config
     ):
         """Test that nodes are processed in parallel."""
-        call_times = []
+        max_concurrent_calls = []
+        current_concurrent_calls = 0
 
         async def mock_simulation(*args, **kwargs):
-            call_times.append(asyncio.get_event_loop().time())
+            nonlocal current_concurrent_calls
+            current_concurrent_calls += 1
+            max_concurrent_calls.append(current_concurrent_calls)
             await asyncio.sleep(0.01)  # Small delay
+            current_concurrent_calls -= 1
             return {"simulation": [], "user_reactions": []}
 
         score_data = {"general_metrics": {}, "overall_score": 0.5}
@@ -396,15 +400,13 @@ class TestMCTSAlgorithm:
         # Execute
         await mcts_algorithm.run(base_messages, initial_responses, mcts_config)
 
-        # Check that simulations happened close together (parallel)
-        # In each iteration, all 3 nodes should be processed nearly simultaneously
-        # Group call times by iteration
-        for i in range(0, len(call_times), 3):
-            iteration_times = call_times[i:i+3]
-            if len(iteration_times) == 3:
-                # Times should be very close (within 0.005 seconds)
-                time_diff = max(iteration_times) - min(iteration_times)
-                assert time_diff < 0.005  # Parallel execution
+        # Check that simulations happened in parallel
+        # In each iteration, all 3 nodes should be processed simultaneously
+        for i in range(0, len(max_concurrent_calls), 3):
+            iteration_calls = max_concurrent_calls[i:i+3]
+            if len(iteration_calls) == 3:
+                # Assert that all 3 nodes were processed concurrently
+                assert max(iteration_calls) == 3  # Parallel execution
 
     @pytest.mark.asyncio
     async def test_run_empty_initial_responses(

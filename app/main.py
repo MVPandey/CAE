@@ -150,7 +150,8 @@ app.include_router(chat_api.router)
 app.include_router(analysis_api.router)
 
 
-if __name__ == "__main__":
+def run_uvicorn():
+    """Run the application using uvicorn."""
     uvicorn.run(
         app,
         host="0.0.0.0",
@@ -158,3 +159,7 @@ if __name__ == "__main__":
         log_level="info",
         access_log=True,
     )
+
+
+if __name__ == "__main__":
+    run_uvicorn()

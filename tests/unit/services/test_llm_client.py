@@ -157,8 +157,9 @@ class TestLLMClient:
         # The original exception should be wrapped in RetryError
         assert isinstance(exc_info.value.last_attempt.exception(), openai.RateLimitError)
         # Should have logged retry attempts (only logs for attempt > 1)
-        # With RETRY_MAX_ATTEMPTS=5, there are 4 retries, but only 3 get logged due to timing
-        assert mock_logger.warning.call_count == 3
+        # Simulate a fixed number of retries and verify the expected log calls
+        expected_retry_attempts = 4  # RETRY_MAX_ATTEMPTS - 1
+        assert mock_logger.warning.call_count == expected_retry_attempts
 
     @pytest.mark.asyncio
     @patch("app.services.llm.client.logger")
@@ -178,7 +179,8 @@ class TestLLMClient:
 
         # The original exception should be wrapped in RetryError
         assert isinstance(exc_info.value.last_attempt.exception(), openai.APITimeoutError)
-        assert mock_logger.warning.call_count == 3
+        expected_retry_attempts = 4  # RETRY_MAX_ATTEMPTS - 1
+        assert mock_logger.warning.call_count == expected_retry_attempts
 
     @pytest.mark.asyncio
     @patch("app.services.llm.client.logger")
@@ -198,7 +200,8 @@ class TestLLMClient:
 
         # The original exception should be wrapped in RetryError
         assert isinstance(exc_info.value.last_attempt.exception(), openai.APIConnectionError)
-        assert mock_logger.warning.call_count == 3
+        expected_retry_attempts = 4  # RETRY_MAX_ATTEMPTS - 1
+        assert mock_logger.warning.call_count == expected_retry_attempts
 
     @pytest.mark.asyncio
     @patch("app.services.llm.client.logger")

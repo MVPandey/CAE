@@ -256,28 +256,26 @@ class TestHealthEndpoint:
 class TestMainModule:
     """Test main module execution."""
 
-    @patch("app.main.uvicorn")
-    def test_main_execution(self, mock_uvicorn):
+    @patch("app.main.run_uvicorn")
+    def test_main_execution(self, mock_run_uvicorn):
         """Test main module runs uvicorn when executed directly."""
         # Simulate running as main module
         with patch("app.main.__name__", "__main__"):
-            # Import would trigger the if __name__ == "__main__" block
-            # We need to execute the code block manually
             import app.main
 
-            # Manually execute the main block
-            if "__main__" == "__main__":
-                mock_uvicorn.run(
-                    app.main.app,
-                    host="0.0.0.0",
-                    port=8000,
-                    log_level="info",
-                    access_log=True,
-                )
+        # Verify run_uvicorn was called
+        mock_run_uvicorn.assert_called_once()
 
-        # Verify uvicorn.run was called
+    @patch("app.main.uvicorn")
+    def test_run_uvicorn_function(self, mock_uvicorn):
+        """Test run_uvicorn function calls uvicorn.run with correct parameters."""
+        from app.main import run_uvicorn, app
+        
+        run_uvicorn()
+
+        # Verify uvicorn.run was called with correct parameters
         mock_uvicorn.run.assert_called_once_with(
-            app.main.app,
+            app,
             host="0.0.0.0",
             port=8000,
             log_level="info",

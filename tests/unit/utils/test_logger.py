@@ -14,6 +14,40 @@ from app.utils.logger import (
 )
 
 
+def create_loguru_record(
+    time=None,
+    level="INFO",
+    name="test_logger",
+    function="test_func",
+    line=42,
+    message="Test message",
+    module="test_module",
+    extra=None,
+    exception=None
+):
+    """Factory function to create realistic loguru record structure."""
+    if time is None:
+        time = datetime(2024, 1, 1, 12, 0, 0)
+    
+    if extra is None:
+        extra = {}
+    
+    level_mock = Mock()
+    level_mock.name = level
+    
+    return {
+        "time": time,
+        "level": level_mock,
+        "name": name,
+        "function": function,
+        "line": line,
+        "message": message,
+        "module": module,
+        "extra": extra,
+        "exception": exception
+    }
+
+
 class TestInterceptHandler:
     """Test InterceptHandler class."""
 
@@ -84,16 +118,16 @@ class TestFormatRecord:
 
     def test_format_record_basic(self):
         """Test basic record formatting."""
-        record = {
-            "time": datetime(2024, 1, 1, 12, 0, 0),
-            "level": Mock(name="INFO"),
-            "name": "test_logger",
-            "function": "test_func",
-            "line": 42,
-            "message": "Test message",
-            "extra": {},
-            "exception": None
-        }
+        record = create_loguru_record(
+            time=datetime(2024, 1, 1, 12, 0, 0),
+            level="INFO",
+            name="test_logger",
+            function="test_func",
+            line=42,
+            message="Test message",
+            extra={},
+            exception=None
+        )
 
         result = format_record(record)
 
@@ -108,20 +142,20 @@ class TestFormatRecord:
 
     def test_format_record_with_extra(self):
         """Test record formatting with extra fields."""
-        record = {
-            "time": datetime(2024, 1, 1, 12, 0, 0),
-            "level": Mock(name="INFO"),
-            "name": "test_logger",
-            "function": "test_func",
-            "line": 42,
-            "message": "Test message",
-            "extra": {
+        record = create_loguru_record(
+            time=datetime(2024, 1, 1, 12, 0, 0),
+            level="INFO",
+            name="test_logger",
+            function="test_func",
+            line=42,
+            message="Test message",
+            extra={
                 "user_id": "123",
                 "request_id": "abc-def",
                 "_internal": "hidden"  # Should be filtered
             },
-            "exception": None
-        }
+            exception=None
+        )
 
         result = format_record(record)
 
@@ -133,18 +167,18 @@ class TestFormatRecord:
     def test_format_record_truncates_long_values(self):
         """Test that long values are truncated."""
         long_string = "x" * 200
-        record = {
-            "time": datetime(2024, 1, 1, 12, 0, 0),
-            "level": Mock(name="INFO"),
-            "name": "test_logger",
-            "function": "test_func",
-            "line": 42,
-            "message": "Test message",
-            "extra": {
+        record = create_loguru_record(
+            time=datetime(2024, 1, 1, 12, 0, 0),
+            level="INFO",
+            name="test_logger",
+            function="test_func",
+            line=42,
+            message="Test message",
+            extra={
                 "long_value": long_string
             },
-            "exception": None
-        }
+            exception=None
+        )
 
         result = format_record(record)
 
@@ -156,18 +190,18 @@ class TestFormatRecord:
 
     def test_format_record_escapes_braces(self):
         """Test that braces in values are escaped."""
-        record = {
-            "time": datetime(2024, 1, 1, 12, 0, 0),
-            "level": Mock(name="INFO"),
-            "name": "test_logger",
-            "function": "test_func",
-            "line": 42,
-            "message": "Test message",
-            "extra": {
+        record = create_loguru_record(
+            time=datetime(2024, 1, 1, 12, 0, 0),
+            level="INFO",
+            name="test_logger",
+            function="test_func",
+            line=42,
+            message="Test message",
+            extra={
                 "json_like": "{key: value}"
             },
-            "exception": None
-        }
+            exception=None
+        )
 
         result = format_record(record)
 
@@ -182,17 +216,13 @@ class TestFormatRecordJson:
         mock_time = Mock()
         mock_time.isoformat.return_value = "2024-01-01T12:00:00"
 
-        # Create a mock level object with a name attribute
-        mock_level = Mock()
-        mock_level.name = "INFO"
-
-        record = {
-            "time": mock_time,
-            "level": mock_level,
-            "name": "test_logger",
-            "function": "test_func",
-            "line": 42,
-            "message": "Test message",
+        record = create_loguru_record(
+            time=mock_time,
+            level="INFO",
+            name="test_logger",
+            function="test_func",
+            line=42,
+            message="Test message",
             "module": "test_module",
             "extra": {},
             "exception": None
@@ -215,21 +245,21 @@ class TestFormatRecordJson:
         mock_time = Mock()
         mock_time.isoformat.return_value = "2024-01-01T12:00:00"
 
-        record = {
-            "time": mock_time,
-            "level": Mock(name="INFO"),
-            "name": "test_logger",
-            "function": "test_func",
-            "line": 42,
-            "message": "Test message",
-            "module": "test_module",
-            "extra": {
+        record = create_loguru_record(
+            time=mock_time,
+            level="INFO",
+            name="test_logger",
+            function="test_func",
+            line=42,
+            message="Test message",
+            module="test_module",
+            extra={
                 "user_id": "123",
                 "request_id": "abc-def",
                 "_internal": "hidden"  # Should be filtered
             },
-            "exception": None
-        }
+            exception=None
+        )
 
         result = format_record_json(record)
         parsed = json.loads(result)
@@ -248,17 +278,17 @@ class TestFormatRecordJson:
         mock_exception.value = ValueError("Test error")
         mock_exception.traceback = Mock(raw="Traceback details")
 
-        record = {
-            "time": mock_time,
-            "level": Mock(name="ERROR"),
-            "name": "test_logger",
-            "function": "test_func",
-            "line": 42,
-            "message": "Error occurred",
-            "module": "test_module",
-            "extra": {},
-            "exception": mock_exception
-        }
+        record = create_loguru_record(
+            time=mock_time,
+            level="ERROR",
+            name="test_logger",
+            function="test_func",
+            line=42,
+            message="Error occurred",
+            module="test_module",
+            extra={},
+            exception=mock_exception
+        )
 
         result = format_record_json(record)
         parsed = json.loads(result)

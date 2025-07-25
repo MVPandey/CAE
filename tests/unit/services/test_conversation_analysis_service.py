@@ -109,12 +109,12 @@ class TestConversationAnalysisService:
             )
 
             mcts_stats = {
-                "total_iterations": 10,
-                "nodes_created": 3,
-                "nodes_evaluated": 30,
-                "pruned_branches": 5,
-                "parallel_evaluations": 10,
-                "average_depth_explored": 3.5
+                "total_iterations": sample_request.mcts_iterations,
+                "nodes_created": sample_request.num_branches,
+                "nodes_evaluated": 3 * 10,  # Assuming each node is evaluated in every iteration
+                "pruned_branches": 3,  # Example: one branch pruned per node
+                "parallel_evaluations": 3,  # Example: evaluations performed in parallel for each node
+                "average_depth_explored": 10 / 3  # Example: average depth based on iterations and nodes
             }
             service.mcts.run = AsyncMock(return_value=(sample_mcts_nodes, mcts_stats))
 
