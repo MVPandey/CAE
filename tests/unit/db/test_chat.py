@@ -1,6 +1,6 @@
 """Unit tests for app.db.chat module."""
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 from uuid import uuid4
 

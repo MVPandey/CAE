@@ -185,7 +185,7 @@ class TestFormatRecordJson:
         # Create a mock level object with a name attribute
         mock_level = Mock()
         mock_level.name = "INFO"
-        
+
         record = {
             "time": mock_time,
             "level": mock_level,
@@ -388,11 +388,11 @@ class TestLoggerConfiguration:
         """Test that InterceptHandler is registered with standard logging."""
         # Import the actual logging module to check handlers
         import logging
-        
+
         # Check that root logger has InterceptHandler
         root_logger = logging.getLogger()
         assert any(isinstance(handler, InterceptHandler) for handler in root_logger.handlers)
-        
+
         # Check that specific loggers have InterceptHandler
         for logger_name in ["uvicorn", "uvicorn.error", "uvicorn.access", "fastapi"]:
             logger = logging.getLogger(logger_name)

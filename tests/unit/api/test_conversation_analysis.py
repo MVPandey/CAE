@@ -1,7 +1,7 @@
 """Unit tests for the conversation analysis API endpoints - simplified version."""
 
 import asyncio
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 

@@ -1,18 +1,17 @@
 """Unit tests for app.services.llm.client module."""
 
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import openai
 import pytest
-from openai import AsyncOpenAI
-from tenacity import RetryCallState, RetryError, stop_after_attempt
 import tenacity
+from openai import AsyncOpenAI
+from tenacity import RetryCallState
 
 from app.services.llm.client import LLMClient
 from app.utils.constants import (
     DEFAULT_LLM_TIMEOUT,
     DEFAULT_MAX_RETRIES,
-    RETRY_MAX_ATTEMPTS,
 )
 
 
@@ -125,12 +124,12 @@ class TestLLMClient:
 
         # Verify it's a retry decorator by checking it's a callable that wraps functions
         assert callable(decorator)
-        
+
         # Test that it properly decorates a function
         @decorator
         def test_func():
             pass
-        
+
         # The decorated function should have retry attributes from tenacity
         assert hasattr(test_func, "retry")
         assert hasattr(test_func, "retry_with")
@@ -190,7 +189,7 @@ class TestLLMClient:
 
         @decorator
         async def test_function():
-            # APIConnectionError requires a request parameter  
+            # APIConnectionError requires a request parameter
             mock_request = MagicMock()
             raise openai.APIConnectionError(request=mock_request)
 

@@ -19,7 +19,7 @@ class TestDatabaseInitialization:
         mock_settings.DB_PORT = 5432
         mock_settings.DB_NAME = "testdb"
         mock_config_class.return_value = mock_settings
-        
+
         # Patch the app_settings at module level before reload
         with patch("app.utils.config.app_settings", mock_settings):
             # Import to trigger module-level code
@@ -60,7 +60,7 @@ class TestDatabaseInitialization:
         mock_settings.DB_PORT = 5433
         mock_settings.DB_NAME = "my-database"
         mock_config_class.return_value = mock_settings
-        
+
         # Patch the app_settings at module level before reload
         with patch("app.utils.config.app_settings", mock_settings):
             # Import to trigger module-level code

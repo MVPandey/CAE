@@ -113,7 +113,7 @@ class TestConfig:
         """Test Config raises error when required fields are missing."""
         # Change to a temp directory without .env file
         monkeypatch.chdir(tmp_path)
-        
+
         # Clear all env vars
         for key in os.environ.copy():
             if key.startswith(("LLM_", "EMBEDDING_", "DB_")):
@@ -246,10 +246,10 @@ class TestAppSettings:
         assert app_settings.LLM_API_KEY is not None
         assert isinstance(app_settings.LLM_API_KEY, str)
         assert len(app_settings.LLM_API_KEY) > 0
-        
+
         # Check that DB_PORT is a valid integer
         assert isinstance(app_settings.DB_PORT, int)
         assert app_settings.DB_PORT > 0
-        
+
         # Check LOG_LEVEL
         assert app_settings.LOG_LEVEL in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]

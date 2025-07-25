@@ -1,6 +1,6 @@
 """Unit tests for user schema models."""
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 import pytest
@@ -20,7 +20,6 @@ class TestUser:
         assert user.name == "John Doe"
         assert isinstance(user.created_at, datetime)
 
-        # Verify that created_at is recent (within last minute)
         time_diff = datetime.now(UTC) - user.created_at
         assert time_diff.total_seconds() < 60
 
@@ -29,11 +28,7 @@ class TestUser:
         user_id = uuid4()
         created_at = datetime(2024, 1, 1, 12, 0, 0)
 
-        user = User(
-            id=user_id,
-            name="Jane Smith",
-            created_at=created_at
-        )
+        user = User(id=user_id, name="Jane Smith", created_at=created_at)
 
         assert user.id == user_id
         assert user.name == "Jane Smith"
@@ -41,7 +36,7 @@ class TestUser:
 
     def test_user_from_attributes(self):
         """Test that User can be created from ORM attributes."""
-        # Simulate ORM object with attributes
+
         class MockORMUser:
             id = uuid4()
             name = "Test User"
@@ -56,11 +51,9 @@ class TestUser:
 
     def test_user_name_constraints(self):
         """Test name field constraints."""
-        # Valid name
         user = User(name="A")
         assert user.name == "A"
 
-        # Maximum length name (255 characters)
         long_name = "A" * 255
         user = User(name=long_name)
         assert user.name == long_name
@@ -72,10 +65,7 @@ class TestUser:
             User(name="")
 
         errors = exc_info.value.errors()
-        assert any(
-            error['loc'][0] == 'name' and 'at least 1 character' in str(error)
-            for error in errors
-        )
+        assert any(error["loc"][0] == "name" and "at least 1 character" in str(error) for error in errors)
 
     def test_user_name_too_long(self):
         """Test that name exceeding max length raises ValidationError."""
@@ -83,10 +73,7 @@ class TestUser:
             User(name="A" * 256)
 
         errors = exc_info.value.errors()
-        assert any(
-            error['loc'][0] == 'name' and 'at most 255 characters' in str(error)
-            for error in errors
-        )
+        assert any(error["loc"][0] == "name" and "at most 255 characters" in str(error) for error in errors)
 
     def test_user_missing_name(self):
         """Test that missing name raises ValidationError."""
@@ -94,7 +81,7 @@ class TestUser:
             User()
 
         errors = exc_info.value.errors()
-        assert any(error['loc'][0] == 'name' for error in errors)
+        assert any(error["loc"][0] == "name" for error in errors)
 
     def test_user_invalid_id(self):
         """Test that invalid id raises ValidationError."""
@@ -102,18 +89,11 @@ class TestUser:
             User(id="not-a-uuid", name="Test")
 
         errors = exc_info.value.errors()
-        assert any(error['loc'][0] == 'id' for error in errors)
+        assert any(error["loc"][0] == "id" for error in errors)
 
     def test_user_special_characters_in_name(self):
         """Test that special characters are allowed in name."""
-        special_names = [
-            "John O'Brien",
-            "María García",
-            "李明",
-            "Müller, Hans",
-            "user@example.com",
-            "User-123"
-        ]
+        special_names = ["John O'Brien", "María García", "李明", "Müller, Hans", "user@example.com", "User-123"]
 
         for name in special_names:
             user = User(name=name)
@@ -130,11 +110,9 @@ class TestUserCreate:
 
     def test_user_create_name_constraints(self):
         """Test UserCreate name field constraints."""
-        # Minimum length
         user_create = UserCreate(name="A")
         assert user_create.name == "A"
 
-        # Maximum length
         long_name = "B" * 255
         user_create = UserCreate(name=long_name)
         assert user_create.name == long_name
@@ -145,10 +123,7 @@ class TestUserCreate:
             UserCreate(name="")
 
         errors = exc_info.value.errors()
-        assert any(
-            error['loc'][0] == 'name' and 'at least 1 character' in str(error)
-            for error in errors
-        )
+        assert any(error["loc"][0] == "name" and "at least 1 character" in str(error) for error in errors)
 
     def test_user_create_name_too_long(self):
         """Test that name exceeding max length raises ValidationError."""
@@ -156,10 +131,7 @@ class TestUserCreate:
             UserCreate(name="X" * 256)
 
         errors = exc_info.value.errors()
-        assert any(
-            error['loc'][0] == 'name' and 'at most 255 characters' in str(error)
-            for error in errors
-        )
+        assert any(error["loc"][0] == "name" and "at most 255 characters" in str(error) for error in errors)
 
     def test_user_create_missing_name(self):
         """Test that missing name raises ValidationError."""
@@ -167,15 +139,14 @@ class TestUserCreate:
             UserCreate()
 
         errors = exc_info.value.errors()
-        assert any(error['loc'][0] == 'name' for error in errors)
+        assert any(error["loc"][0] == "name" for error in errors)
 
     def test_user_create_whitespace_handling(self):
         """Test how UserCreate handles whitespace in names."""
-        # Names with various whitespace
         test_cases = [
-            ("  John Doe  ", "  John Doe  "),  # Preserves whitespace
-            ("John  Doe", "John  Doe"),  # Preserves internal whitespace
-            (" ", " "),  # Single space is valid (min_length=1)
+            ("  John Doe  ", "  John Doe  "),
+            ("John  Doe", "John  Doe"),
+            (" ", " "),
         ]
 
         for input_name, expected_name in test_cases:
@@ -186,7 +157,6 @@ class TestUserCreate:
         """Test that UserCreate can be used to create a User."""
         user_create = UserCreate(name="Test User")
 
-        # Simulate creating a User from UserCreate data
         user = User(name=user_create.name)
 
         assert user.name == user_create.name
