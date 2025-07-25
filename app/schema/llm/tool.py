@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Callable, ClassVar, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ToolParameterProperty(BaseModel):
@@ -49,9 +49,9 @@ class ToolSchema(BaseModel):
     type: Literal["function"] = "function"
     function: ToolFunction = Field(..., description="The function definition")
 
-    class Config:
-        frozen = True  # Makes instances immutable
-        json_schema_extra = {
+    model_config = ConfigDict(
+        frozen=True,  # Makes instances immutable
+        json_schema_extra={
             "example": {
                 "type": "function",
                 "function": {
@@ -75,6 +75,7 @@ class ToolSchema(BaseModel):
                 },
             }
         }
+    )
 
 
 class AbstractTool(ABC, BaseModel):

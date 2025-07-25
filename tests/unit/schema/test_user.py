@@ -1,6 +1,6 @@
 """Unit tests for user schema models."""
 
-from datetime import datetime
+from datetime import datetime, UTC
 from uuid import UUID, uuid4
 
 import pytest
@@ -21,7 +21,7 @@ class TestUser:
         assert isinstance(user.created_at, datetime)
 
         # Verify that created_at is recent (within last minute)
-        time_diff = datetime.utcnow() - user.created_at
+        time_diff = datetime.now(UTC) - user.created_at
         assert time_diff.total_seconds() < 60
 
     def test_user_creation_with_explicit_values(self):
@@ -45,7 +45,7 @@ class TestUser:
         class MockORMUser:
             id = uuid4()
             name = "Test User"
-            created_at = datetime.utcnow()
+            created_at = datetime.now(UTC)
 
         orm_user = MockORMUser()
         user = User.model_validate(orm_user, from_attributes=True)

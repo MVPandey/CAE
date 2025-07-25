@@ -1,6 +1,6 @@
 """Unit tests for app.db.chat module."""
 
-from datetime import datetime
+from datetime import datetime, UTC
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 from uuid import uuid4
 
@@ -176,7 +176,7 @@ class TestUserFunctions:
         mock_user = Mock(spec=UserModel)
         mock_user.id = user_id
         mock_user.name = "Test User"
-        mock_user.created_at = datetime.utcnow()
+        mock_user.created_at = datetime.now(UTC)
 
         # Test
         with patch("app.db.chat.UserModel") as MockUserModel:
@@ -207,7 +207,7 @@ class TestUserFunctions:
         mock_user = Mock(spec=UserModel)
         mock_user.id = user_id
         mock_user.name = "Test User"
-        mock_user.created_at = datetime.utcnow()
+        mock_user.created_at = datetime.now(UTC)
         mock_session.get.return_value = mock_user
 
         # Test
@@ -294,7 +294,7 @@ class TestUserFunctions:
             user = Mock(spec=UserModel)
             user.id = uuid4()
             user.name = f"User {i}"
-            user.created_at = datetime.utcnow()
+            user.created_at = datetime.now(UTC)
             mock_users.append(user)
 
         mock_result = Mock()
@@ -330,7 +330,7 @@ class TestChatFunctions:
             chat = Mock(spec=ChatModel)
             chat.id = uuid4()
             chat.user_id = user_id
-            chat.created_at = datetime.utcnow()
+            chat.created_at = datetime.now(UTC)
             mock_chats.append(chat)
 
         mock_result = Mock()
@@ -361,7 +361,7 @@ class TestChatFunctions:
         mock_chat = Mock(spec=ChatModel)
         mock_chat.id = chat_id
         mock_chat.user_id = user_id
-        mock_chat.created_at = datetime.utcnow()
+        mock_chat.created_at = datetime.now(UTC)
 
         # Test
         with patch("app.db.chat.ChatModel") as MockChatModel:
@@ -392,7 +392,7 @@ class TestChatFunctions:
         mock_chat = Mock(spec=ChatModel)
         mock_chat.id = chat_id
         mock_chat.user_id = uuid4()
-        mock_chat.created_at = datetime.utcnow()
+        mock_chat.created_at = datetime.now(UTC)
         mock_session.get.return_value = mock_chat
 
         # Test
@@ -457,7 +457,7 @@ class TestMessageFunctions:
         mock_message.content = message.content
         mock_message.tool_calls = None
         mock_message.tool_call_id = None
-        mock_message.created_at = datetime.utcnow()
+        mock_message.created_at = datetime.now(UTC)
 
         # Test
         with patch("app.db.chat.ChatMessageModel") as MockMessageModel:
@@ -493,7 +493,7 @@ class TestMessageFunctions:
             msg.content = f"Message {i}"
             msg.tool_calls = None
             msg.tool_call_id = None
-            msg.created_at = datetime.utcnow()
+            msg.created_at = datetime.now(UTC)
             mock_messages.append(msg)
 
         mock_result = Mock()
@@ -540,7 +540,7 @@ class TestConversationAnalysisFunctions:
         mock_analysis = Mock(spec=ConversationAnalysisModel)
         mock_analysis.id = analysis_id
         mock_analysis.chat_id = chat_id
-        mock_analysis.created_at = datetime.utcnow()
+        mock_analysis.created_at = datetime.now(UTC)
         mock_analysis.conversation_goal = test_data["conversation_goal"]
         mock_analysis.branches = test_data["branches"]
         mock_analysis.selected_branch_index = test_data["selected_branch_index"]
@@ -581,7 +581,7 @@ class TestConversationAnalysisFunctions:
             analysis = Mock(spec=ConversationAnalysisModel)
             analysis.id = uuid4()
             analysis.chat_id = chat_id
-            analysis.created_at = datetime.utcnow()
+            analysis.created_at = datetime.now(UTC)
             analysis.conversation_goal = f"Goal {i}"
             analysis.branches = [{"response": f"Branch {i}"}]
             analysis.selected_branch_index = 0

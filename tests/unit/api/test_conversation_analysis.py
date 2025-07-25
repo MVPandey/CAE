@@ -1,7 +1,7 @@
 """Unit tests for the conversation analysis API endpoints - simplified version."""
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, UTC
 from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
@@ -61,7 +61,7 @@ def mock_analysis_response(mock_conversation_branches):
     return ConversationAnalysisResponse(
         id=uuid4(),
         chat_id=chat_id,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
         conversation_goal="feel better",
         branches=mock_conversation_branches,
         selected_branch_index=0,

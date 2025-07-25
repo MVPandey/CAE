@@ -1,6 +1,6 @@
 """Unit tests for conversation_analysis schema models."""
 
-from datetime import datetime
+from datetime import datetime, UTC
 from uuid import uuid4
 
 import pytest
@@ -125,7 +125,7 @@ class TestConversationAnalysisResponse:
         """Test creating a valid ConversationAnalysisResponse."""
         analysis_id = uuid4()
         chat_id = uuid4()
-        created_at = datetime.utcnow()
+        created_at = datetime.now(UTC)
 
         branches = [
             ConversationBranch(
@@ -198,7 +198,7 @@ class TestConversationAnalysisResponse:
         response = ConversationAnalysisResponse(
             id=uuid4(),
             chat_id=uuid4(),
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(UTC),
             conversation_goal=None,
             branches=branches,
             selected_branch_index=0,

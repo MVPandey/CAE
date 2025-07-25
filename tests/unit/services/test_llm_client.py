@@ -1,6 +1,6 @@
 """Unit tests for app.services.llm.client module."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, AsyncMock
 
 import openai
 import pytest
@@ -137,7 +137,8 @@ class TestLLMClient:
 
     @pytest.mark.asyncio
     @patch("app.services.llm.client.logger")
-    async def test_get_retry_decorator_with_rate_limit_error(self, mock_logger):
+    @patch("asyncio.sleep", new_callable=AsyncMock)
+    async def test_get_retry_decorator_with_rate_limit_error(self, mock_sleep, mock_logger):
         """Test retry decorator handles RateLimitError."""
         decorator = LLMClient.get_retry_decorator()
 
@@ -162,7 +163,8 @@ class TestLLMClient:
 
     @pytest.mark.asyncio
     @patch("app.services.llm.client.logger")
-    async def test_get_retry_decorator_with_timeout_error(self, mock_logger):
+    @patch("asyncio.sleep", new_callable=AsyncMock)
+    async def test_get_retry_decorator_with_timeout_error(self, mock_sleep, mock_logger):
         """Test retry decorator handles APITimeoutError."""
         decorator = LLMClient.get_retry_decorator()
 
@@ -181,7 +183,8 @@ class TestLLMClient:
 
     @pytest.mark.asyncio
     @patch("app.services.llm.client.logger")
-    async def test_get_retry_decorator_with_connection_error(self, mock_logger):
+    @patch("asyncio.sleep", new_callable=AsyncMock)
+    async def test_get_retry_decorator_with_connection_error(self, mock_sleep, mock_logger):
         """Test retry decorator handles APIConnectionError."""
         decorator = LLMClient.get_retry_decorator()
 
@@ -217,7 +220,8 @@ class TestLLMClient:
 
     @pytest.mark.asyncio
     @patch("app.services.llm.client.logger")
-    async def test_get_retry_decorator_successful_after_retry(self, mock_logger):
+    @patch("asyncio.sleep", new_callable=AsyncMock)
+    async def test_get_retry_decorator_successful_after_retry(self, mock_sleep, mock_logger):
         """Test retry decorator succeeds after retries."""
         decorator = LLMClient.get_retry_decorator()
 

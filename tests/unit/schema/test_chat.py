@@ -1,6 +1,6 @@
 """Unit tests for chat schema models."""
 
-from datetime import datetime
+from datetime import datetime, UTC
 from uuid import UUID, uuid4
 
 import pytest
@@ -38,7 +38,7 @@ class TestChat:
         assert chat.user_id == user_id
         assert isinstance(chat.created_at, datetime)
         # Verify that created_at is recent (within last minute)
-        time_diff = datetime.utcnow() - chat.created_at
+        time_diff = datetime.now(UTC) - chat.created_at
         assert time_diff.total_seconds() < 60
 
     def test_chat_creation_with_explicit_values(self):
@@ -63,7 +63,7 @@ class TestChat:
         class MockORMChat:
             id = uuid4()
             user_id = uuid4()
-            created_at = datetime.utcnow()
+            created_at = datetime.now(UTC)
 
         orm_chat = MockORMChat()
         chat = Chat.model_validate(orm_chat, from_attributes=True)
@@ -175,7 +175,7 @@ class TestChatMessage:
             content = "Test message"
             tool_calls = None
             tool_call_id = None
-            created_at = datetime.utcnow()
+            created_at = datetime.now(UTC)
             embedding = None
 
         orm_message = MockORMMessage()
@@ -219,7 +219,7 @@ class TestChatMessage:
                 {"name": "func1", "params": {"a": 1, "b": [1, 2, 3]}},
                 {"name": "func2", "params": {"nested": {"deep": True}}}
             ],
-            "metadata": {"timestamp": datetime.utcnow().isoformat()}
+            "metadata": {"timestamp": datetime.now(UTC).isoformat()}
         }
 
         message = ChatMessage(
