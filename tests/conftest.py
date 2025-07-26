@@ -12,6 +12,13 @@ os.environ["ENVIRONMENT"] = "test"
 os.environ["DATABASE_URL"] = "postgresql://test:test@localhost:5432/test_db"
 os.environ["OPENAI_API_KEY"] = "test-api-key"
 
+TEST_CONSTANTS_CLASS_NAME = "TestConstants"
+
+
+def should_skip_mock(request):
+    """Helper function to check if mocking should be skipped for a test."""
+    return request.node.parent and request.node.parent.name == TEST_CONSTANTS_CLASS_NAME
+
 
 @pytest.fixture(scope="session")
 def event_loop_policy():
@@ -44,7 +51,7 @@ async def async_client():
 @pytest.fixture(autouse=True)
 def mock_retry_delays(request):
     """Automatically mock retry delays for all tests to speed them up."""
-    if request.node.parent and request.node.parent.name == "TestConstants":
+    if should_skip_mock(request):
         yield
         return
 
@@ -71,7 +78,7 @@ def mock_tenacity_retry():
 @pytest.fixture(autouse=True)
 def mock_asyncio_sleep(request):
     """Mock asyncio.sleep to speed up tests."""
-    if request.node.parent and request.node.parent.name == "TestConstants":
+    if should_skip_mock(request):
         yield
         return
 

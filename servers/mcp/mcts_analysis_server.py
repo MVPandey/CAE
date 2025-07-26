@@ -19,6 +19,7 @@ from app.services.conversation_analysis import (
 from app.services.llm_service import LLMService
 from app.services.mcts import MCTSAlgorithm
 from app.utils.config import app_settings
+from app.utils.constants import RETRY_MAX_ATTEMPTS, RETRY_MAX_WAIT, RETRY_MIN_WAIT, RETRY_MULTIPLIER
 from app.utils.logger import logger
 
 llm_service: LLMService | None = None
@@ -44,7 +45,7 @@ signal.signal(signal.SIGTERM, handle_shutdown)
 signal.signal(signal.SIGINT, handle_shutdown)
 
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10), reraise=True)
+@retry(stop=stop_after_attempt(RETRY_MAX_ATTEMPTS), wait=wait_exponential(multiplier=RETRY_MULTIPLIER, min=RETRY_MIN_WAIT, max=RETRY_MAX_WAIT), reraise=True)
 async def initialize_services():
     """Initialize all required services with retry logic."""
     global llm_service, response_generator, simulator, scorer, analyzer, mcts_algorithm
@@ -107,7 +108,7 @@ def create_mcp_server(initialize_on_startup: bool = True) -> FastMCP:
     )
 
 
-mcp = create_mcp_server(initialize_on_startup=False)  # We'll handle initialization based on transport
+mcp = create_mcp_server(initialize_on_startup=False)  # Initialization is deferred to allow transport-specific handling. Ensure transport mechanisms trigger initialization when required.
 
 
 

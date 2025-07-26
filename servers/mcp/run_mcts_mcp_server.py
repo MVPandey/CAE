@@ -21,7 +21,7 @@ if __name__ == "__main__":
         default=os.getenv("MCP_TRANSPORT", "http"),
         help="Transport to use (default: http)"
     )
-    parser.add_argument("--host", default=os.getenv("MCP_HOST", "0.0.0.0"), help="Host to bind to for HTTP transport (default: 0.0.0.0)")
+    parser.add_argument("--host", default=os.getenv("MCP_HOST", "127.0.0.1"), help="Host to bind to for HTTP transport (default: 127.0.0.1)")
     parser.add_argument("--port", type=int, default=int(os.getenv("MCP_PORT", "8001")), help="Port to bind to for HTTP transport (default: 8001)")
     parser.add_argument("--log-level", default=os.getenv("MCP_LOG_LEVEL", "INFO"), help="Log level (default: INFO)")
 
