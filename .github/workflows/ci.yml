@@ -44,6 +44,20 @@ jobs:
         poetry run pytest --cov=app --cov-report=term-missing --cov-report=html --cov-fail-under=95
       env:
         PYTHONPATH: ${{ github.workspace }}
+        ENVIRONMENT: test
+        LLM_API_KEY: test-api-key
+        LLM_API_BASE_URL: https://api.openai.com/v1
+        LLM_MODEL_NAME: gpt-4
+        EMBEDDING_MODEL_API_KEY: test-api-key
+        EMBEDDING_MODEL_BASE_URL: https://api.openai.com/v1
+        EMBEDDING_MODEL_NAME: text-embedding-3-large
+        DB_HOST: localhost
+        DB_PORT: 5432
+        DB_NAME: test_db
+        DB_USER: test
+        DB_SECRET: test
+        LOG_LEVEL: DEBUG
+        LLM_TIMEOUT_SECONDS: 600
     
     - name: Upload coverage reports
       uses: actions/upload-artifact@v4
