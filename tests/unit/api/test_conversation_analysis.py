@@ -91,11 +91,9 @@ class TestConversationAnalysisEndpoints:
         chat_id = uuid4()
         mock_analysis_response.chat_id = chat_id
 
-        # Create a mock service
         mock_service = AsyncMock(spec=ConversationAnalysisService)
         mock_service.analyze_conversation = AsyncMock(return_value=mock_analysis_response)
 
-        # Override the dependency
         app.dependency_overrides[ConversationAnalysisService] = lambda: mock_service
 
         try:
@@ -119,13 +117,11 @@ class TestConversationAnalysisEndpoints:
             assert "overall_scores" in data
             assert "mcts_statistics" in data
 
-            # Verify the service was called
             mock_service.analyze_conversation.assert_called_once()
             call_args = mock_service.analyze_conversation.call_args[0][0]
             assert isinstance(call_args, ConversationAnalysisRequest)
             assert call_args.chat_id == chat_id
         finally:
-            # Clean up
             app.dependency_overrides.clear()
 
     @pytest.mark.asyncio
@@ -134,11 +130,9 @@ class TestConversationAnalysisEndpoints:
         chat_id = uuid4()
         mock_analysis_response.chat_id = chat_id
 
-        # Create a mock service
         mock_service = AsyncMock(spec=ConversationAnalysisService)
         mock_service.analyze_conversation = AsyncMock(return_value=mock_analysis_response)
 
-        # Override the dependency
         app.dependency_overrides[ConversationAnalysisService] = lambda: mock_service
 
         try:
@@ -151,7 +145,6 @@ class TestConversationAnalysisEndpoints:
             data = response.json()
             assert data["chat_id"] == str(chat_id)
 
-            # Verify defaults were used
             call_args = mock_service.analyze_conversation.call_args[0][0]
             assert call_args.num_branches == 5
             assert call_args.simulation_depth == 3
@@ -159,17 +152,14 @@ class TestConversationAnalysisEndpoints:
             assert call_args.mcts_iterations == 10
             assert call_args.exploration_constant == 1.414
         finally:
-            # Clean up
             app.dependency_overrides.clear()
 
     @pytest.mark.asyncio
     async def test_analyze_conversation_value_error(self, async_client):
         """Test conversation analysis when service raises ValueError."""
-        # Create a mock service that raises ValueError
         mock_service = AsyncMock(spec=ConversationAnalysisService)
         mock_service.analyze_conversation = AsyncMock(side_effect=ValueError("Chat not found"))
 
-        # Override the dependency
         app.dependency_overrides[ConversationAnalysisService] = lambda: mock_service
 
         try:
@@ -181,17 +171,14 @@ class TestConversationAnalysisEndpoints:
             assert response.status_code == status.HTTP_400_BAD_REQUEST
             assert "Chat not found" in response.json()["detail"]
         finally:
-            # Clean up
             app.dependency_overrides.clear()
 
     @pytest.mark.asyncio
     async def test_analyze_conversation_timeout(self, async_client):
         """Test conversation analysis when operation times out."""
-        # Create a mock service that raises TimeoutError
         mock_service = AsyncMock(spec=ConversationAnalysisService)
         mock_service.analyze_conversation = AsyncMock(side_effect=asyncio.TimeoutError())
 
-        # Override the dependency
         app.dependency_overrides[ConversationAnalysisService] = lambda: mock_service
 
         try:
@@ -204,17 +191,14 @@ class TestConversationAnalysisEndpoints:
             assert "timed out" in response.json()["detail"]
             assert "reducing the simulation depth" in response.json()["detail"]
         finally:
-            # Clean up
             app.dependency_overrides.clear()
 
     @pytest.mark.asyncio
     async def test_analyze_conversation_general_error(self, async_client):
         """Test conversation analysis when unexpected error occurs."""
-        # Create a mock service that raises a general exception
         mock_service = AsyncMock(spec=ConversationAnalysisService)
         mock_service.analyze_conversation = AsyncMock(side_effect=Exception("Unexpected error"))
 
-        # Override the dependency
         app.dependency_overrides[ConversationAnalysisService] = lambda: mock_service
 
         try:
@@ -227,20 +211,17 @@ class TestConversationAnalysisEndpoints:
             assert "Internal server error" in response.json()["detail"]
             assert "Unexpected error" in response.json()["detail"]
         finally:
-            # Clean up
             app.dependency_overrides.clear()
 
     @pytest.mark.asyncio
     async def test_analyze_conversation_validation_errors(self, async_client):
         """Test request validation."""
-        # Missing chat_id
         response = await async_client.post(
             "/analysis/",
             json={"conversation_goal": "feel better"}
         )
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-        # Invalid chat_id format
         response = await async_client.post(
             "/analysis/",
             json={"chat_id": "not-a-uuid"}

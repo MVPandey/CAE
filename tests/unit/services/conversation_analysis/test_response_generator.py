@@ -42,7 +42,6 @@ class TestResponseGenerator:
         goal = "Help user with their problem"
         max_tokens = 100
 
-        # Mock LLM response
         expected_responses = [
             "I understand you need help. Can you provide more details?",
             "Let me assist you with that. What specific issue are you facing?",
@@ -50,16 +49,13 @@ class TestResponseGenerator:
         ]
         mock_llm_service.query_llm = AsyncMock(return_value={"responses": expected_responses})
 
-        # Execute
         responses = await response_generator.generate_initial_branches(
             sample_messages, num_branches, goal, max_tokens
         )
 
-        # Verify
         assert responses == expected_responses
         assert len(responses) == num_branches
 
-        # Verify LLM call
         mock_llm_service.query_llm.assert_called_once()
         call_args = mock_llm_service.query_llm.call_args
         assert call_args.kwargs["json_response"] is True
@@ -82,7 +78,6 @@ class TestResponseGenerator:
 
         assert responses == expected_responses
 
-        # Check that goal section is not included in prompt
         messages = mock_llm_service.query_llm.call_args.kwargs["messages"]
         system_prompt = messages[0]
         assert "<conversation_goal>" not in system_prompt.content
@@ -95,7 +90,6 @@ class TestResponseGenerator:
         num_branches = 3
         max_tokens = 100
 
-        # Mock invalid response (not a dict)
         mock_llm_service.query_llm = AsyncMock(return_value="Invalid response")
 
         with patch("app.services.conversation_analysis.response_generator.logger") as mock_logger:
@@ -103,11 +97,9 @@ class TestResponseGenerator:
                 sample_messages, num_branches, None, max_tokens
             )
 
-            # Should return default responses
             assert responses == ResponseConfig.DEFAULT_RESPONSES[:num_branches]
             assert len(responses) == num_branches
 
-            # Verify error was logged
             mock_logger.error.assert_called_once()
 
     @pytest.mark.asyncio
@@ -118,7 +110,6 @@ class TestResponseGenerator:
         num_branches = 2
         max_tokens = 100
 
-        # Mock response without 'responses' key
         mock_llm_service.query_llm = AsyncMock(return_value={"data": ["Response 1"]})
 
         with patch("app.services.conversation_analysis.response_generator.logger") as mock_logger:
@@ -137,7 +128,6 @@ class TestResponseGenerator:
         num_branches = 3
         max_tokens = 100
 
-        # Mock LLM to raise exception
         mock_llm_service.query_llm = AsyncMock(side_effect=Exception("LLM error"))
 
         with patch("app.services.conversation_analysis.response_generator.logger") as mock_logger:
@@ -162,15 +152,12 @@ class TestResponseGenerator:
         expected_response = "Here's a different approach to help you"
         mock_llm_service.query_llm = AsyncMock(return_value={"response": expected_response})
 
-        # Execute
         response = await response_generator.generate_expansion_response(
             sample_messages, existing_responses, goal, max_tokens
         )
 
-        # Verify
         assert response == expected_response
 
-        # Verify LLM call
         mock_llm_service.query_llm.assert_called_once()
         call_args = mock_llm_service.query_llm.call_args
         assert call_args.kwargs["json_response"] is True
@@ -193,7 +180,6 @@ class TestResponseGenerator:
 
         assert response == expected_response
 
-        # Check that goal section is not included
         messages = mock_llm_service.query_llm.call_args.kwargs["messages"]
         system_prompt = messages[0]
         assert "<goal>" not in system_prompt.content
@@ -206,7 +192,6 @@ class TestResponseGenerator:
         existing_responses = ["Response 1"]
         max_tokens = 100
 
-        # Mock invalid response
         mock_llm_service.query_llm = AsyncMock(return_value={"data": "Invalid"})
 
         with patch("app.services.conversation_analysis.response_generator.logger") as mock_logger:
@@ -301,7 +286,6 @@ class TestResponseGenerator:
             sample_messages, num_branches, goal, max_tokens
         )
 
-        # Check the structure of messages sent to LLM
         messages = mock_llm_service.query_llm.call_args.kwargs["messages"]
         assert len(messages) == len(sample_messages) + 1  # System prompt + conversation
         assert messages[0].role == "system"  # First is system prompt
@@ -321,7 +305,6 @@ class TestResponseGenerator:
             sample_messages, existing, None, max_tokens
         )
 
-        # Check the structure of messages sent to LLM
         messages = mock_llm_service.query_llm.call_args.kwargs["messages"]
         assert messages[0].role == "system"
         assert json.dumps(existing) in messages[0].content

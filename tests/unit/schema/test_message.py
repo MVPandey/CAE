@@ -34,7 +34,6 @@ class TestMessage:
 
         errors = exc_info.value.errors()
         assert any(error['loc'][0] == 'role' for error in errors)
-        # Check that the error mentions the valid options
         error_str = str(exc_info.value)
         assert "user" in error_str
         assert "assistant" in error_str
@@ -87,7 +86,6 @@ class TestToolMessage:
 
     def test_tool_message_role_must_be_tool(self):
         """Test that role must be 'tool' for ToolMessage."""
-        # This should work
         tool_message = ToolMessage(
             role="tool",
             tool_call_id="123",
@@ -96,7 +94,6 @@ class TestToolMessage:
         )
         assert tool_message.role == "tool"
 
-        # This should fail
         with pytest.raises(ValidationError) as exc_info:
             ToolMessage(
                 role="user",  # Invalid role for ToolMessage

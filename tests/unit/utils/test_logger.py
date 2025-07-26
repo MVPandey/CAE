@@ -28,13 +28,12 @@ def create_loguru_record(
     """Factory function to create realistic loguru record structure."""
     if time is None:
         time = datetime(2024, 1, 1, 12, 0, 0)
-    
+
     if extra is None:
         extra = {}
-    
+
     level_mock = Mock()
     level_mock.name = level
-    
     return {
         "time": time,
         "level": level_mock,
@@ -55,7 +54,6 @@ class TestInterceptHandler:
         """Test InterceptHandler emits normal log records."""
         handler = InterceptHandler()
 
-        # Create a mock record
         record = Mock()
         record.name = "test_logger"
         record.levelno = logging.INFO
@@ -63,14 +61,12 @@ class TestInterceptHandler:
         record.getMessage.return_value = "Test message"
         record.exc_info = None
 
-        # Mock logger to capture the call
         with patch("app.utils.logger.logger") as mock_logger:
             mock_logger.level.return_value.name = "INFO"
             mock_logger.opt.return_value.log = MagicMock()
 
             handler.emit(record)
 
-            # Verify logger was called
             mock_logger.opt.assert_called_once()
             mock_logger.opt.return_value.log.assert_called_once_with("INFO", "Test message")
 
@@ -78,23 +74,19 @@ class TestInterceptHandler:
         """Test InterceptHandler filters out uvicorn debug logs."""
         handler = InterceptHandler()
 
-        # Create a uvicorn debug record
         record = Mock()
         record.name = "uvicorn"
         record.levelno = logging.DEBUG
 
-        # Mock logger - should not be called
         with patch("app.utils.logger.logger") as mock_logger:
             handler.emit(record)
 
-            # Logger should not be called for filtered records
             mock_logger.opt.assert_not_called()
 
     def test_intercept_handler_with_exception(self):
         """Test InterceptHandler handles records with exceptions."""
         handler = InterceptHandler()
 
-        # Create a record with exception
         record = Mock()
         record.name = "test_logger"
         record.levelno = logging.ERROR
@@ -108,7 +100,6 @@ class TestInterceptHandler:
 
             handler.emit(record)
 
-            # Verify exception info was passed
             mock_logger.opt.assert_called_once()
             assert mock_logger.opt.call_args[1]["exception"] == record.exc_info
 
@@ -131,8 +122,6 @@ class TestFormatRecord:
 
         result = format_record(record)
 
-        # The format_record function returns a format string, not the actual formatted message
-        # It should contain the format placeholders
         assert "{time:YYYY-MM-DD HH:mm:ss.SSS}" in result
         assert "{level: <8}" in result
         assert "{name}" in result
@@ -159,7 +148,6 @@ class TestFormatRecord:
 
         result = format_record(record)
 
-        # Check that extra fields are properly formatted in the result
         assert "<blue>user_id</blue>=<yellow>123</yellow>" in result
         assert "<blue>request_id</blue>=<yellow>abc-def</yellow>" in result
         assert "_internal" not in result  # Hidden fields should be filtered
@@ -182,10 +170,8 @@ class TestFormatRecord:
 
         result = format_record(record)
 
-        # Check that the long value is truncated to 97 chars + "..."
         assert "<blue>long_value</blue>=<yellow>" in result
         assert "..." in result
-        # The actual truncation happens, we just need to verify the pattern is there
         assert "xxx" in result
 
     def test_format_record_escapes_braces(self):
@@ -223,16 +209,15 @@ class TestFormatRecordJson:
             function="test_func",
             line=42,
             message="Test message",
-            "module": "test_module",
-            "extra": {},
-            "exception": None
-        }
+            module="test_module",
+            extra={},
+            exception=None
+        )
 
         result = format_record_json(record)
         parsed = json.loads(result)
 
         assert parsed["timestamp"] == "2024-01-01T12:00:00"
-        # The level is a Mock object with name attribute
         assert parsed["level"] == "INFO"
         assert parsed["logger"] == "test_logger"
         assert parsed["function"] == "test_func"
@@ -307,7 +292,6 @@ class TestLoggerWrapper:
         mock_logger = MagicMock()
         wrapper = LoggerWrapper(mock_logger)
 
-        # Test each logging method
         wrapper.info("Info message")
         mock_logger.info.assert_called_once_with("Info message")
 
@@ -331,10 +315,8 @@ class TestLoggerWrapper:
 
         wrapper = LoggerWrapper(mock_logger)
 
-        # Log with extra context
         wrapper.info("Message", extra={"user_id": "123"})
 
-        # Should bind context and use bound logger
         mock_logger.bind.assert_called_once_with(user_id="123")
         mock_bound_logger.info.assert_called_once_with("Message")
 
@@ -346,10 +328,8 @@ class TestLoggerWrapper:
 
         wrapper = LoggerWrapper(mock_logger)
 
-        # Create bound logger
         bound_wrapper = wrapper.bind(request_id="abc")
 
-        # Should return a new LoggerWrapper
         assert isinstance(bound_wrapper, LoggerWrapper)
         assert bound_wrapper._logger == mock_bound_logger
         mock_logger.bind.assert_called_once_with(request_id="abc")
@@ -359,10 +339,8 @@ class TestLoggerWrapper:
         mock_logger = MagicMock()
         wrapper = LoggerWrapper(mock_logger)
 
-        # Call opt method
         result = wrapper.opt(depth=2, exception=True)
 
-        # Should pass through to wrapped logger
         mock_logger.opt.assert_called_once_with(depth=2, exception=True)
         assert result == mock_logger.opt.return_value
 
@@ -373,10 +351,8 @@ class TestLoggerWrapper:
 
         wrapper = LoggerWrapper(mock_logger)
 
-        # Access custom method
         result = wrapper.custom_method("arg1", "arg2")
 
-        # Should delegate to wrapped logger
         mock_logger.custom_method.assert_called_once_with("arg1", "arg2")
         assert result == "custom result"
 
@@ -392,7 +368,6 @@ class TestGetLogger:
 
         result = get_logger()
 
-        # Should bind empty context
         mock_logger.bind.assert_called_once_with()
         assert isinstance(result, LoggerWrapper)
         assert result._logger == mock_bound
@@ -405,7 +380,6 @@ class TestGetLogger:
 
         result = get_logger(user_id="123", request_id="abc")
 
-        # Should bind provided context
         mock_logger.bind.assert_called_once_with(user_id="123", request_id="abc")
         assert isinstance(result, LoggerWrapper)
         assert result._logger == mock_bound
@@ -416,14 +390,11 @@ class TestLoggerConfiguration:
 
     def test_intercept_handler_registered(self):
         """Test that InterceptHandler is registered with standard logging."""
-        # Import the actual logging module to check handlers
         import logging
 
-        # Check that root logger has InterceptHandler
         root_logger = logging.getLogger()
         assert any(isinstance(handler, InterceptHandler) for handler in root_logger.handlers)
 
-        # Check that specific loggers have InterceptHandler
         for logger_name in ["uvicorn", "uvicorn.error", "uvicorn.access", "fastapi"]:
             logger = logging.getLogger(logger_name)
             assert any(isinstance(handler, InterceptHandler) for handler in logger.handlers)

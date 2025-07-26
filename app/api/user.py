@@ -177,7 +177,6 @@ async def get_user_chats(user_id: UUID):
     )
 
     try:
-        # First check if user exists
         user = await db.get_user(user_id)
         if not user:
             logger.warning(

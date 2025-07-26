@@ -38,27 +38,23 @@ class TestDatabaseModels:
         """Test UserModel has correct structure."""
         assert UserModel.__tablename__ == "user"
 
-        # Check columns
         assert hasattr(UserModel, "id")
         assert hasattr(UserModel, "name")
         assert hasattr(UserModel, "created_at")
         assert hasattr(UserModel, "chats")
 
-        # Check relationships
         assert UserModel.chats.property.back_populates == "user"
 
     def test_chat_model_structure(self):
         """Test ChatModel has correct structure."""
         assert ChatModel.__tablename__ == "chat"
 
-        # Check columns
         assert hasattr(ChatModel, "id")
         assert hasattr(ChatModel, "user_id")
         assert hasattr(ChatModel, "created_at")
         assert hasattr(ChatModel, "user")
         assert hasattr(ChatModel, "messages")
 
-        # Check relationships
         assert ChatModel.user.property.back_populates == "chats"
         assert ChatModel.messages.property.back_populates == "chat"
 
@@ -66,7 +62,6 @@ class TestDatabaseModels:
         """Test ChatMessageModel has correct structure."""
         assert ChatMessageModel.__tablename__ == "chat_message"
 
-        # Check columns
         assert hasattr(ChatMessageModel, "id")
         assert hasattr(ChatMessageModel, "chat_id")
         assert hasattr(ChatMessageModel, "role")
@@ -80,7 +75,6 @@ class TestDatabaseModels:
         """Test ConversationAnalysisModel has correct structure."""
         assert ConversationAnalysisModel.__tablename__ == "conversation_analysis"
 
-        # Check columns
         assert hasattr(ConversationAnalysisModel, "id")
         assert hasattr(ConversationAnalysisModel, "chat_id")
         assert hasattr(ConversationAnalysisModel, "created_at")
@@ -104,12 +98,10 @@ class TestDatabase:
         db_url = "postgresql+asyncpg://test:test@localhost:5432/testdb"
         db = Database(db_url)
 
-        # Check engine creation
         mock_create_engine.assert_called_once_with(
             db_url, echo=False, pool_size=20, max_overflow=10
         )
 
-        # Check session maker creation
         mock_sessionmaker.assert_called_once_with(
             mock_create_engine.return_value,
             class_=AsyncSession,
@@ -123,20 +115,17 @@ class TestDatabase:
     @patch("app.db.chat.create_async_engine")
     async def test_create_db_and_tables(self, mock_create_engine):
         """Test create_db_and_tables method."""
-        # Create mock engine with begin method
         mock_engine = AsyncMock()
         mock_conn = AsyncMock()
         mock_begin = AsyncMock()
         mock_begin.__aenter__.return_value = mock_conn
         mock_begin.__aexit__.return_value = None
-        # Make begin() method that returns an async context manager
         mock_engine.begin = MagicMock(return_value=mock_begin)
         mock_create_engine.return_value = mock_engine
 
         db = Database("postgresql+asyncpg://test:test@localhost:5432/testdb")
         await db.create_db_and_tables()
 
-        # Verify metadata.create_all was called
         mock_conn.run_sync.assert_called_once()
         args = mock_conn.run_sync.call_args[0]
         assert args[0] == Base.metadata.create_all
@@ -146,7 +135,6 @@ class TestDatabase:
         """Test get_session context manager."""
         db = Database("postgresql+asyncpg://test:test@localhost:5432/testdb")
 
-        # Mock session
         mock_session = AsyncMock()
         mock_session_maker = AsyncMock()
         mock_session_maker.__aenter__.return_value = mock_session
@@ -164,26 +152,22 @@ class TestUserFunctions:
     @patch("app.db.chat.db")
     async def test_create_user(self, mock_db):
         """Test create_user function."""
-        # Setup mocks
         mock_session = AsyncMock()
         mock_context = AsyncMock()
         mock_context.__aenter__.return_value = mock_session
         mock_context.__aexit__.return_value = None
         mock_db.get_session.return_value = mock_context
 
-        # Mock user model
         user_id = uuid4()
         mock_user = Mock(spec=UserModel)
         mock_user.id = user_id
         mock_user.name = "Test User"
         mock_user.created_at = datetime.now(UTC)
 
-        # Test
         with patch("app.db.chat.UserModel") as MockUserModel:
             MockUserModel.return_value = mock_user
             result = await create_user("Test User")
 
-        # Verify
         MockUserModel.assert_called_once_with(name="Test User")
         mock_session.add.assert_called_once_with(mock_user)
         mock_session.commit.assert_called_once()
@@ -195,14 +179,12 @@ class TestUserFunctions:
     @patch("app.db.chat.db")
     async def test_get_user_found(self, mock_db):
         """Test get_user when user exists."""
-        # Setup mocks
         mock_session = AsyncMock()
         mock_context = AsyncMock()
         mock_context.__aenter__.return_value = mock_session
         mock_context.__aexit__.return_value = None
         mock_db.get_session.return_value = mock_context
 
-        # Mock user
         user_id = uuid4()
         mock_user = Mock(spec=UserModel)
         mock_user.id = user_id
@@ -210,10 +192,8 @@ class TestUserFunctions:
         mock_user.created_at = datetime.now(UTC)
         mock_session.get.return_value = mock_user
 
-        # Test
         result = await get_user(user_id)
 
-        # Verify
         mock_session.get.assert_called_once_with(UserModel, user_id)
         assert isinstance(result, User)
 
@@ -221,7 +201,6 @@ class TestUserFunctions:
     @patch("app.db.chat.db")
     async def test_get_user_not_found(self, mock_db):
         """Test get_user when user doesn't exist."""
-        # Setup mocks
         mock_session = AsyncMock()
         mock_context = AsyncMock()
         mock_context.__aenter__.return_value = mock_session
@@ -229,31 +208,25 @@ class TestUserFunctions:
         mock_db.get_session.return_value = mock_context
         mock_session.get.return_value = None
 
-        # Test
         result = await get_user(uuid4())
 
-        # Verify
         assert result is None
 
     @pytest.mark.asyncio
     @patch("app.db.chat.db")
     async def test_delete_user_exists(self, mock_db):
         """Test delete_user when user exists."""
-        # Setup mocks
         mock_session = AsyncMock()
         mock_context = AsyncMock()
         mock_context.__aenter__.return_value = mock_session
         mock_context.__aexit__.return_value = None
         mock_db.get_session.return_value = mock_context
 
-        # Mock user
         mock_user = Mock(spec=UserModel)
         mock_session.get.return_value = mock_user
 
-        # Test
         result = await delete_user(uuid4())
 
-        # Verify
         mock_session.delete.assert_called_once_with(mock_user)
         mock_session.commit.assert_called_once()
         assert result is True
@@ -262,7 +235,6 @@ class TestUserFunctions:
     @patch("app.db.chat.db")
     async def test_delete_user_not_found(self, mock_db):
         """Test delete_user when user doesn't exist."""
-        # Setup mocks
         mock_session = AsyncMock()
         mock_context = AsyncMock()
         mock_context.__aenter__.return_value = mock_session
@@ -270,10 +242,8 @@ class TestUserFunctions:
         mock_db.get_session.return_value = mock_context
         mock_session.get.return_value = None
 
-        # Test
         result = await delete_user(uuid4())
 
-        # Verify
         mock_session.delete.assert_not_called()
         assert result is False
 
@@ -281,14 +251,12 @@ class TestUserFunctions:
     @patch("app.db.chat.db")
     async def test_list_users(self, mock_db):
         """Test list_users function."""
-        # Setup mocks
         mock_session = AsyncMock()
         mock_context = AsyncMock()
         mock_context.__aenter__.return_value = mock_session
         mock_context.__aexit__.return_value = None
         mock_db.get_session.return_value = mock_context
 
-        # Mock users
         mock_users = []
         for i in range(3):
             user = Mock(spec=UserModel)
@@ -301,10 +269,8 @@ class TestUserFunctions:
         mock_result.scalars.return_value.all.return_value = mock_users
         mock_session.execute.return_value = mock_result
 
-        # Test
         result = await list_users()
 
-        # Verify
         assert len(result) == 3
         assert all(isinstance(u, User) for u in result)
 
@@ -316,14 +282,12 @@ class TestChatFunctions:
     @patch("app.db.chat.db")
     async def test_get_user_chats(self, mock_db):
         """Test get_user_chats function."""
-        # Setup mocks
         mock_session = AsyncMock()
         mock_context = AsyncMock()
         mock_context.__aenter__.return_value = mock_session
         mock_context.__aexit__.return_value = None
         mock_db.get_session.return_value = mock_context
 
-        # Mock chats
         user_id = uuid4()
         mock_chats = []
         for i in range(2):
@@ -337,10 +301,8 @@ class TestChatFunctions:
         mock_result.scalars.return_value.all.return_value = mock_chats
         mock_session.execute.return_value = mock_result
 
-        # Test
         result = await get_user_chats(user_id)
 
-        # Verify
         assert len(result) == 2
         assert all(isinstance(c, Chat) for c in result)
 
@@ -348,14 +310,12 @@ class TestChatFunctions:
     @patch("app.db.chat.db")
     async def test_create_chat_session(self, mock_db):
         """Test create_chat_session function."""
-        # Setup mocks
         mock_session = AsyncMock()
         mock_context = AsyncMock()
         mock_context.__aenter__.return_value = mock_session
         mock_context.__aexit__.return_value = None
         mock_db.get_session.return_value = mock_context
 
-        # Mock chat
         user_id = uuid4()
         chat_id = uuid4()
         mock_chat = Mock(spec=ChatModel)
@@ -363,12 +323,10 @@ class TestChatFunctions:
         mock_chat.user_id = user_id
         mock_chat.created_at = datetime.now(UTC)
 
-        # Test
         with patch("app.db.chat.ChatModel") as MockChatModel:
             MockChatModel.return_value = mock_chat
             result = await create_chat_session(user_id)
 
-        # Verify
         MockChatModel.assert_called_once_with(user_id=user_id)
         mock_session.add.assert_called_once_with(mock_chat)
         mock_session.commit.assert_called_once()
@@ -380,14 +338,12 @@ class TestChatFunctions:
     @patch("app.db.chat.db")
     async def test_get_chat_session(self, mock_db):
         """Test get_chat_session function."""
-        # Setup mocks
         mock_session = AsyncMock()
         mock_context = AsyncMock()
         mock_context.__aenter__.return_value = mock_session
         mock_context.__aexit__.return_value = None
         mock_db.get_session.return_value = mock_context
 
-        # Mock chat
         chat_id = uuid4()
         mock_chat = Mock(spec=ChatModel)
         mock_chat.id = chat_id
@@ -395,10 +351,8 @@ class TestChatFunctions:
         mock_chat.created_at = datetime.now(UTC)
         mock_session.get.return_value = mock_chat
 
-        # Test
         result = await get_chat_session(chat_id)
 
-        # Verify
         mock_session.get.assert_called_once_with(ChatModel, chat_id)
         assert isinstance(result, Chat)
 
@@ -406,22 +360,18 @@ class TestChatFunctions:
     @patch("app.db.chat.db")
     async def test_delete_chat_session(self, mock_db):
         """Test delete_chat_session function."""
-        # Setup mocks
         mock_session = AsyncMock()
         mock_context = AsyncMock()
         mock_context.__aenter__.return_value = mock_session
         mock_context.__aexit__.return_value = None
         mock_db.get_session.return_value = mock_context
 
-        # Mock chat
         chat_id = uuid4()
         mock_chat = Mock(spec=ChatModel)
         mock_session.get.return_value = mock_chat
 
-        # Test
         await delete_chat_session(chat_id)
 
-        # Verify
         mock_session.execute.assert_called_once()  # For deleting messages
         mock_session.get.assert_called_once_with(ChatModel, chat_id)
         mock_session.delete.assert_called_once_with(mock_chat)
@@ -435,21 +385,18 @@ class TestMessageFunctions:
     @patch("app.db.chat.db")
     async def test_create_chat_message(self, mock_db):
         """Test create_chat_message function."""
-        # Setup mocks
         mock_session = AsyncMock()
         mock_context = AsyncMock()
         mock_context.__aenter__.return_value = mock_session
         mock_context.__aexit__.return_value = None
         mock_db.get_session.return_value = mock_context
 
-        # Create message
         message = ChatMessage(
             chat_id=uuid4(),
             role=ChatRole.USER,
             content="Test message"
         )
 
-        # Mock message model
         mock_message = Mock(spec=ChatMessageModel)
         mock_message.id = uuid4()
         mock_message.chat_id = message.chat_id
@@ -459,12 +406,10 @@ class TestMessageFunctions:
         mock_message.tool_call_id = None
         mock_message.created_at = datetime.now(UTC)
 
-        # Test
         with patch("app.db.chat.ChatMessageModel") as MockMessageModel:
             MockMessageModel.return_value = mock_message
             result = await create_chat_message(message)
 
-        # Verify
         mock_session.add.assert_called_once()
         mock_session.commit.assert_called_once()
         mock_session.refresh.assert_called_once()
@@ -475,14 +420,12 @@ class TestMessageFunctions:
     @patch("app.db.chat.db")
     async def test_get_chat_history(self, mock_db):
         """Test get_chat_history function."""
-        # Setup mocks
         mock_session = AsyncMock()
         mock_context = AsyncMock()
         mock_context.__aenter__.return_value = mock_session
         mock_context.__aexit__.return_value = None
         mock_db.get_session.return_value = mock_context
 
-        # Mock messages
         chat_id = uuid4()
         mock_messages = []
         for i in range(3):
@@ -500,10 +443,8 @@ class TestMessageFunctions:
         mock_result.scalars.return_value.all.return_value = mock_messages
         mock_session.execute.return_value = mock_result
 
-        # Test
         result = await get_chat_history(chat_id)
 
-        # Verify
         assert len(result) == 3
         assert all(isinstance(m, ChatMessage) for m in result)
 
@@ -515,14 +456,12 @@ class TestConversationAnalysisFunctions:
     @patch("app.db.chat.db")
     async def test_create_conversation_analysis(self, mock_db):
         """Test create_conversation_analysis function."""
-        # Setup mocks
         mock_session = AsyncMock()
         mock_context = AsyncMock()
         mock_context.__aenter__.return_value = mock_session
         mock_context.__aexit__.return_value = None
         mock_db.get_session.return_value = mock_context
 
-        # Test data
         chat_id = uuid4()
         analysis_id = uuid4()
         test_data = {
@@ -536,7 +475,6 @@ class TestConversationAnalysisFunctions:
             "mcts_statistics": {"stat1": "value1"}
         }
 
-        # Mock analysis model
         mock_analysis = Mock(spec=ConversationAnalysisModel)
         mock_analysis.id = analysis_id
         mock_analysis.chat_id = chat_id
@@ -549,12 +487,10 @@ class TestConversationAnalysisFunctions:
         mock_analysis.scores = test_data["scores"]
         mock_analysis.mcts_statistics = test_data["mcts_statistics"]
 
-        # Test
         with patch("app.db.chat.ConversationAnalysisModel") as MockAnalysisModel:
             MockAnalysisModel.return_value = mock_analysis
             result = await create_conversation_analysis(**test_data)
 
-        # Verify
         mock_session.add.assert_called_once()
         mock_session.commit.assert_called_once()
         mock_session.refresh.assert_called_once()
@@ -567,14 +503,12 @@ class TestConversationAnalysisFunctions:
     @patch("app.db.chat.db")
     async def test_get_chat_analyses(self, mock_db):
         """Test get_chat_analyses function."""
-        # Setup mocks
         mock_session = AsyncMock()
         mock_context = AsyncMock()
         mock_context.__aenter__.return_value = mock_session
         mock_context.__aexit__.return_value = None
         mock_db.get_session.return_value = mock_context
 
-        # Mock analyses
         chat_id = uuid4()
         mock_analyses = []
         for i in range(2):
@@ -595,10 +529,8 @@ class TestConversationAnalysisFunctions:
         mock_result.scalars.return_value.all.return_value = mock_analyses
         mock_session.execute.return_value = mock_result
 
-        # Test
         result = await get_chat_analyses(chat_id)
 
-        # Verify
         assert len(result) == 2
         assert all(isinstance(a, dict) for a in result)
         assert all("id" in a for a in result)

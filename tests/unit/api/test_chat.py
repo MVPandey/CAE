@@ -38,11 +38,9 @@ class TestChatEndpoints:
     @pytest.mark.asyncio
     async def test_send_message_success(self, async_client, mock_chat_messages):
         """Test successful message sending with dependency override."""
-        # Create a mock service
         mock_service = AsyncMock(spec=ChatService)
         mock_service.process_message = AsyncMock(return_value=mock_chat_messages)
 
-        # Override the dependency
         app.dependency_overrides[ChatService] = lambda: mock_service
 
         try:
@@ -61,15 +59,12 @@ class TestChatEndpoints:
             assert data[0]["content"] == "Hello, how are you?"
             assert data[1]["role"] == "assistant"
 
-            # Verify the service was called
             mock_service.process_message.assert_called_once()
             call_args = mock_service.process_message.call_args
-            # Check that the user_id was passed correctly
             assert "user_id" in call_args.kwargs
             assert call_args.kwargs["user_message"] == "Hello, how are you?"
             assert call_args.kwargs["chat_id"] is None
         finally:
-            # Clean up
             app.dependency_overrides.clear()
 
     @pytest.mark.asyncio
@@ -78,11 +73,9 @@ class TestChatEndpoints:
         chat_id = str(uuid4())
         user_id = str(uuid4())
 
-        # Create a mock service
         mock_service = AsyncMock(spec=ChatService)
         mock_service.process_message = AsyncMock(return_value=mock_chat_messages)
 
-        # Override the dependency
         app.dependency_overrides[ChatService] = lambda: mock_service
 
         try:
@@ -99,24 +92,20 @@ class TestChatEndpoints:
             data = response.json()
             assert len(data) == 2
 
-            # Verify the service was called with correct parameters
             mock_service.process_message.assert_called_once()
             call_args = mock_service.process_message.call_args
             assert call_args.kwargs["chat_id"] == chat_id
             assert call_args.kwargs["user_id"] == user_id
             assert call_args.kwargs["user_message"] == "What's the weather like?"
         finally:
-            # Clean up
             app.dependency_overrides.clear()
 
     @pytest.mark.asyncio
     async def test_send_message_service_error(self, async_client):
         """Test handling of service errors."""
-        # Create a mock service that raises an error
         mock_service = AsyncMock(spec=ChatService)
         mock_service.process_message = AsyncMock(side_effect=Exception("LLM API error"))
 
-        # Override the dependency
         app.dependency_overrides[ChatService] = lambda: mock_service
 
         try:
@@ -131,27 +120,23 @@ class TestChatEndpoints:
             assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
             assert "LLM API error" in response.json()["detail"]
         finally:
-            # Clean up
             app.dependency_overrides.clear()
 
     @pytest.mark.asyncio
     async def test_send_message_validation_errors(self, async_client):
         """Test request validation."""
-        # Missing user_id
         response = await async_client.post(
             "/chats/",
             json={"message": "Hello"}
         )
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-        # Missing message
         response = await async_client.post(
             "/chats/",
             json={"user_id": str(uuid4())}
         )
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-        # Empty request body
         response = await async_client.post(
             "/chats/",
             json={}

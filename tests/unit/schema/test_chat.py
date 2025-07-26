@@ -37,7 +37,6 @@ class TestChat:
         assert isinstance(chat.id, UUID)
         assert chat.user_id == user_id
         assert isinstance(chat.created_at, datetime)
-        # Verify that created_at is recent (within last minute)
         time_diff = datetime.now(UTC) - chat.created_at
         assert time_diff.total_seconds() < 60
 
@@ -59,7 +58,6 @@ class TestChat:
 
     def test_chat_from_attributes(self):
         """Test that Chat can be created from ORM attributes."""
-        # Simulate ORM object with attributes
         class MockORMChat:
             id = uuid4()
             user_id = uuid4()
@@ -167,7 +165,6 @@ class TestChatMessage:
 
     def test_chat_message_from_attributes(self):
         """Test that ChatMessage can be created from ORM attributes."""
-        # Simulate ORM object
         class MockORMMessage:
             id = uuid4()
             chat_id = uuid4()
@@ -213,7 +210,6 @@ class TestChatMessage:
         """Test that arbitrary types are allowed in tool_calls."""
         chat_id = uuid4()
 
-        # Complex nested structure
         complex_tool_calls = {
             "functions": [
                 {"name": "func1", "params": {"a": 1, "b": [1, 2, 3]}},

@@ -65,7 +65,6 @@ class TestMCTSAlgorithm:
         self, mcts_algorithm, base_messages, initial_responses, mcts_config
     ):
         """Test basic MCTS run."""
-        # Mock simulation and scoring
         simulation_data = {
             "simulation": [
                 {"role": "user", "content": "It's a web app"},
@@ -84,12 +83,10 @@ class TestMCTSAlgorithm:
         mcts_algorithm.scorer.score_simulation = AsyncMock(return_value=score_data)
         mcts_algorithm.response_generator.generate_expansion_response = AsyncMock(return_value=None)
 
-        # Execute
         root_nodes, stats = await mcts_algorithm.run(
             base_messages, initial_responses, mcts_config
         )
 
-        # Verify
         assert len(root_nodes) == 3
         assert all(isinstance(node, MCTSNode) for node in root_nodes)
         assert stats["total_iterations"] == 5
@@ -97,7 +94,6 @@ class TestMCTSAlgorithm:
         assert stats["nodes_evaluated"] > 0
         assert stats["parallel_evaluations"] > 0
 
-        # Verify nodes have been updated
         for node in root_nodes:
             assert node.visits > 0
             assert node.avg_score > 0
@@ -107,7 +103,6 @@ class TestMCTSAlgorithm:
         self, mcts_algorithm, base_messages, initial_responses, mcts_config
     ):
         """Test MCTS run with node expansion."""
-        # Mock responses
         simulation_data = {
             "simulation": [{"role": "user", "content": "Test"}],
             "user_reactions": ["Neutral"]
@@ -119,7 +114,6 @@ class TestMCTSAlgorithm:
             "overall_score": 0.8
         }
 
-        # Mock expansion to return new response on second iteration
         expansion_called = 0
         async def mock_expansion(*args, **kwargs):
             nonlocal expansion_called
@@ -132,15 +126,12 @@ class TestMCTSAlgorithm:
             side_effect=mock_expansion
         )
 
-        # Execute
         root_nodes, stats = await mcts_algorithm.run(
             base_messages, initial_responses, mcts_config
         )
 
-        # Verify expansion occurred
         assert stats["nodes_created"] > 3  # More than initial nodes
 
-        # Check that at least one node has children
         has_children = any(len(node.children) > 0 for node in root_nodes)
         assert has_children
 
@@ -149,12 +140,9 @@ class TestMCTSAlgorithm:
         self, mcts_algorithm, base_messages, initial_responses, mcts_config
     ):
         """Test MCTS run with branch pruning."""
-        # Set up config to trigger pruning
         mcts_config["iterations"] = MCTSConfig.PRUNING_INTERVAL + 1
 
-        # Mock responses - make one branch perform poorly
         async def mock_score_simulation(messages, sim_data, goal, max_tokens):
-            # Check which node is being scored based on messages
             if "What specific aspect" in messages[-1].content:
                 return {
                     "general_metrics": {"clarity": 0.3},  # Low score
@@ -173,18 +161,15 @@ class TestMCTSAlgorithm:
         mcts_algorithm.scorer.score_simulation = AsyncMock(side_effect=mock_score_simulation)
         mcts_algorithm.response_generator.generate_expansion_response = AsyncMock(return_value=None)
 
-        # Execute
         root_nodes, stats = await mcts_algorithm.run(
             base_messages, initial_responses, mcts_config
         )
 
-        # Verify pruning occurred
         assert stats["pruned_branches"] >= 0
 
     @pytest.mark.asyncio
     async def test_select_node(self, mcts_algorithm):
         """Test node selection logic."""
-        # Create a tree structure
         root = MCTSNode("Root")
         child1 = MCTSNode("Child 1")
         child2 = MCTSNode("Child 2")
@@ -192,26 +177,21 @@ class TestMCTSAlgorithm:
         root.add_child(child1)
         root.add_child(child2)
 
-        # Update visit counts and scores
         root.visits = 10
         child1.visits = 6
         child1.avg_score = 0.8
         child2.visits = 4
         child2.avg_score = 0.7
 
-        # Test selection from root - should select root itself since it's not fully expanded
         selected = await mcts_algorithm._select_node(root, 1.414)
         assert selected == root  # Root has only 2 children, not fully expanded
 
-        # Now make root fully expanded
         child3 = MCTSNode("Child 3")
         child3.visits = 2
         child3.avg_score = 0.6
         root.add_child(child3)
 
-        # Now should select best child
         selected = await mcts_algorithm._select_node(root, 1.414)
-        # Should select one of the children based on UCB1 score
         assert selected in [child1, child2, child3]
 
     @pytest.mark.asyncio
@@ -219,7 +199,6 @@ class TestMCTSAlgorithm:
         """Test node selection with unexpanded nodes."""
         root = MCTSNode("Root")
 
-        # Add 3 children to make root fully expanded
         for i in range(3):
             child = MCTSNode(f"Child {i}")
             child.visits = 1
@@ -228,10 +207,8 @@ class TestMCTSAlgorithm:
 
         root.visits = 5
 
-        # Now root is fully expanded, should select best child
         selected = await mcts_algorithm._select_node(root, 1.414)
 
-        # Should select one of the children (they all have no children so are not fully expanded)
         assert selected in root.children
 
     @pytest.mark.asyncio
@@ -248,7 +225,6 @@ class TestMCTSAlgorithm:
             "simulation_depth": 2
         }
 
-        # Mock dependencies
         mcts_algorithm.response_generator.generate_expansion_response = AsyncMock(
             return_value="New child response"
         )
@@ -266,12 +242,10 @@ class TestMCTSAlgorithm:
         }
         mcts_algorithm.scorer.score_simulation = AsyncMock(return_value=score_data)
 
-        # Execute
         score, new_children = await mcts_algorithm._expand_and_simulate(
             base_messages, node, config
         )
 
-        # Verify
         assert score == 0.88
         assert len(new_children) == 1
         assert new_children[0].response == "New child response"
@@ -294,7 +268,6 @@ class TestMCTSAlgorithm:
             "simulation_depth": 1
         }
 
-        # Mock dependencies
         simulation_data = {"simulation": [], "user_reactions": []}
         score_data = {"general_metrics": {}, "goal_metrics": {}, "overall_score": 0.5}
 
@@ -302,19 +275,16 @@ class TestMCTSAlgorithm:
         mcts_algorithm.scorer.score_simulation = AsyncMock(return_value=score_data)
         mcts_algorithm.response_generator.generate_expansion_response = AsyncMock()
 
-        # Execute
         score, new_children = await mcts_algorithm._expand_and_simulate(
             base_messages, node, config
         )
 
-        # Verify no expansion occurred
         assert score == 0.5
         assert len(new_children) == 0
         mcts_algorithm.response_generator.generate_expansion_response.assert_not_called()
 
     def test_build_conversation_path(self, mcts_algorithm, base_messages):
         """Test building conversation path from node."""
-        # Create a path: root -> child -> grandchild
         root = MCTSNode("")  # Empty root
         child = MCTSNode("First response")
         grandchild = MCTSNode("Second response")
@@ -322,10 +292,8 @@ class TestMCTSAlgorithm:
         root.add_child(child)
         child.add_child(grandchild)
 
-        # Build path from grandchild
         path = mcts_algorithm._build_conversation_path(base_messages, grandchild)
 
-        # Verify path includes base messages and responses
         assert len(path) == len(base_messages) + 2
         assert path[:len(base_messages)] == base_messages
         assert path[-2].content == "First response"
@@ -339,7 +307,6 @@ class TestMCTSAlgorithm:
 
         path = mcts_algorithm._build_conversation_path(base_messages, node)
 
-        # Should just be base messages (root response is empty and removed)
         assert path == base_messages
 
     @pytest.mark.asyncio
@@ -347,7 +314,6 @@ class TestMCTSAlgorithm:
         self, mcts_algorithm, base_messages, initial_responses, mcts_config
     ):
         """Test that statistics are properly tracked during run."""
-        # Mock minimal responses
         simulation_data = {"simulation": [], "user_reactions": []}
         score_data = {"general_metrics": {}, "overall_score": 0.5}
 
@@ -355,12 +321,10 @@ class TestMCTSAlgorithm:
         mcts_algorithm.scorer.score_simulation = AsyncMock(return_value=score_data)
         mcts_algorithm.response_generator.generate_expansion_response = AsyncMock(return_value=None)
 
-        # Execute
         root_nodes, stats = await mcts_algorithm.run(
             base_messages, initial_responses, mcts_config
         )
 
-        # Verify all statistics are present
         assert "total_iterations" in stats
         assert "nodes_created" in stats
         assert "nodes_evaluated" in stats
@@ -368,7 +332,6 @@ class TestMCTSAlgorithm:
         assert "parallel_evaluations" in stats
         assert "average_depth_explored" in stats
 
-        # Verify statistics make sense
         assert stats["total_iterations"] == mcts_config["iterations"]
         assert stats["nodes_created"] >= len(initial_responses)
         assert stats["nodes_evaluated"] > 0
@@ -397,15 +360,11 @@ class TestMCTSAlgorithm:
         mcts_algorithm.scorer.score_simulation = AsyncMock(return_value=score_data)
         mcts_algorithm.response_generator.generate_expansion_response = AsyncMock(return_value=None)
 
-        # Execute
         await mcts_algorithm.run(base_messages, initial_responses, mcts_config)
 
-        # Check that simulations happened in parallel
-        # In each iteration, all 3 nodes should be processed simultaneously
         for i in range(0, len(max_concurrent_calls), 3):
             iteration_calls = max_concurrent_calls[i:i+3]
             if len(iteration_calls) == 3:
-                # Assert that all 3 nodes were processed concurrently
                 assert max(iteration_calls) == 3  # Parallel execution
 
     @pytest.mark.asyncio
@@ -413,7 +372,6 @@ class TestMCTSAlgorithm:
         self, mcts_algorithm, base_messages, mcts_config
     ):
         """Test handling of empty initial responses."""
-        # Running with empty initial responses should handle gracefully
         root_nodes, stats = await mcts_algorithm.run(base_messages, [], mcts_config)
 
         assert len(root_nodes) == 0

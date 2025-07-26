@@ -92,7 +92,6 @@ class TestConversationAnalysisService:
         self, service, sample_request, sample_chat_history, sample_mcts_nodes, mock_dependencies
     ):
         """Test successful conversation analysis."""
-        # Setup mocks
         mock_get_history = AsyncMock(return_value=sample_chat_history)
         mock_create_analysis = AsyncMock(return_value={
             "id": str(uuid4()),
@@ -103,7 +102,6 @@ class TestConversationAnalysisService:
         with patch("app.services.conversation_analysis_service.get_chat_history", mock_get_history), \
              patch("app.services.conversation_analysis_service.create_conversation_analysis", mock_create_analysis):
 
-            # Configure mocks
             service.response_generator.generate_initial_branches = AsyncMock(
                 return_value=["Response 1", "Response 2", "Response 3"]
             )
@@ -123,7 +121,6 @@ class TestConversationAnalysisService:
                 return_value=(best_node, 0, "This response effectively addresses the issue")
             )
 
-            # Create proper branch mocks with required attributes
             branches = []
             for i, node in enumerate(sample_mcts_nodes):
                 branch = Mock(spec=ConversationBranch)
@@ -138,10 +135,8 @@ class TestConversationAnalysisService:
 
             service.analyzer.convert_to_branches = Mock(return_value=branches)
 
-            # Execute
             result = await service.analyze_conversation(sample_request)
 
-            # Verify
             assert isinstance(result, ConversationAnalysisResponse)
             assert result.chat_id == sample_request.chat_id
             assert result.conversation_goal == sample_request.conversation_goal
@@ -150,7 +145,6 @@ class TestConversationAnalysisService:
             assert len(result.branches) == 3
             assert result.mcts_statistics == mcts_stats
 
-            # Verify calls
             mock_get_history.assert_called_once_with(sample_request.chat_id)
             service.response_generator.generate_initial_branches.assert_called_once()
             service.mcts.run.assert_called_once()
@@ -179,18 +173,14 @@ class TestConversationAnalysisService:
 
     def test_calculate_variance(self, service):
         """Test variance calculation."""
-        # Empty list
         assert service._calculate_variance([]) == 0.0
 
-        # Single value
         assert service._calculate_variance([5.0]) == 0.0
 
-        # Multiple values
         values = [1.0, 2.0, 3.0, 4.0, 5.0]
         variance = service._calculate_variance(values)
         assert variance == 2.0  # Expected variance
 
-        # All same values
         assert service._calculate_variance([3.0, 3.0, 3.0]) == 0.0
 
     def test_branch_to_dict(self, service):
@@ -231,7 +221,6 @@ class TestConversationAnalysisService:
              patch("app.services.conversation_analysis_service.create_conversation_analysis", mock_create_analysis), \
              patch("app.services.conversation_analysis_service.logger") as mock_logger:
 
-            # Configure mocks
             service.response_generator.generate_initial_branches = AsyncMock(
                 return_value=["Response 1", "Response 2", "Response 3"]
             )
@@ -241,10 +230,8 @@ class TestConversationAnalysisService:
             )
             service.analyzer.convert_to_branches = Mock(return_value=[])
 
-            # Execute
             await service.analyze_conversation(sample_request)
 
-            # Verify logging
             assert mock_logger.info.call_count == 2
             start_log = mock_logger.info.call_args_list[0]
             assert "Starting conversation analysis" in start_log[0][0]
@@ -283,7 +270,6 @@ class TestConversationAnalysisService:
         with patch("app.services.conversation_analysis_service.get_chat_history", mock_get_history), \
              patch("app.services.conversation_analysis_service.create_conversation_analysis", mock_create_analysis):
 
-            # Configure mocks with delays
             service.response_generator.generate_initial_branches = AsyncMock(
                 return_value=["Response 1", "Response 2", "Response 3"]
             )
@@ -293,10 +279,8 @@ class TestConversationAnalysisService:
             )
             service.analyzer.convert_to_branches = Mock(return_value=[])
 
-            # Execute and measure time
             start_time = time.time()
             await service.analyze_conversation(sample_request)
             elapsed_time = time.time() - start_time
 
-            # Should complete quickly with mocked dependencies
             assert elapsed_time < 1.0

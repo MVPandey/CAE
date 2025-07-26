@@ -102,7 +102,6 @@ class TestCleanJsonResponse:
         with pytest.raises(LLMException):
             clean_json_response(response)
 
-        # Should log markdown block parsing failure
         assert mock_logger.error.called
         error_calls = mock_logger.error.call_args_list
         assert any("Failed to parse JSON from markdown block" in str(call) for call in error_calls)
@@ -113,7 +112,6 @@ class TestCleanJsonResponse:
         with pytest.raises(LLMException) as exc_info:
             clean_json_response(large_response)
 
-        # Should truncate in details
         assert len(exc_info.value.details["response"]) <= 1003  # 1000 + "..."
 
 
@@ -139,11 +137,9 @@ class TestSafeJsonDumps:
 
     def test_safe_json_dumps_non_serializable(self):
         """Test handling non-serializable objects."""
-        # datetime is not JSON serializable by default
         obj = datetime.now()
         result = safe_json_dumps(obj)
 
-        # Should convert to string
         parsed = json.loads(result)
         assert isinstance(parsed, str)
         assert str(obj) in parsed
@@ -151,7 +147,6 @@ class TestSafeJsonDumps:
     @patch("app.utils.json_utils.logger")
     def test_safe_json_dumps_error_logging(self, mock_logger):
         """Test that serialization errors are logged."""
-        # Create a truly non-serializable object
         class NonSerializable:
             def __str__(self):
                 return "NonSerializable object"
@@ -159,13 +154,11 @@ class TestSafeJsonDumps:
         obj = NonSerializable()
         result = safe_json_dumps(obj)
 
-        # Should log the error
         mock_logger.error.assert_called_once()
         call_args = mock_logger.error.call_args
         assert "Failed to serialize object to JSON" in call_args[0]
         assert call_args[1]["extra"]["object_type"] == "NonSerializable"
 
-        # Should return stringified version
         assert result == '"NonSerializable object"'
 
     def test_safe_json_dumps_complex_nested(self):
@@ -188,9 +181,7 @@ class TestSafeJsonDumps:
         """Test that custom encoder arguments work."""
         data = {"value": float('inf')}
 
-        # Without allow_nan=False, infinity should be serialized as null
         result = safe_json_dumps(data, allow_nan=False)
 
-        # This should raise an error in json.dumps, triggering fallback
         parsed = json.loads(result)
         assert isinstance(parsed, str)  # Fallback to string representation

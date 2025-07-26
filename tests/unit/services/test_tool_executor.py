@@ -42,16 +42,13 @@ class TestToolExecutor:
     @patch("app.services.llm.tool_executor.logger")
     async def test_execute_tool_calls_single_success(self, mock_logger, tool_executor, mock_tool_call):
         """Test execute_tool_calls with single successful call."""
-        # Setup
         async def mock_tool_function(param):
             return {"result": param}
 
         tool_executor.registry.get_tool_function.return_value = mock_tool_function
 
-        # Execute
         results = await tool_executor.execute_tool_calls([mock_tool_call])
 
-        # Verify
         assert len(results) == 1
         assert isinstance(results[0], ToolMessage)
         assert results[0].role == "tool"
@@ -59,7 +56,6 @@ class TestToolExecutor:
         assert results[0].name == "test_tool"
         assert json.loads(results[0].content) == {"result": "value"}
 
-        # Check logging
         info_calls = mock_logger.info.call_args_list
         assert any("Starting tool execution batch" in str(call) for call in info_calls)
         assert any("Tool execution batch completed" in str(call) for call in info_calls)
@@ -67,7 +63,6 @@ class TestToolExecutor:
     @pytest.mark.asyncio
     async def test_execute_tool_calls_multiple_success(self, tool_executor):
         """Test execute_tool_calls with multiple successful calls."""
-        # Setup multiple tool calls
         tool_calls = []
         for i in range(3):
             call = MagicMock(spec=ToolCall)
@@ -82,10 +77,8 @@ class TestToolExecutor:
 
         tool_executor.registry.get_tool_function.return_value = mock_tool_function
 
-        # Execute
         results = await tool_executor.execute_tool_calls(tool_calls)
 
-        # Verify
         assert len(results) == 3
         for i, result in enumerate(results):
             assert result.tool_call_id == f"call_{i}"
@@ -95,16 +88,13 @@ class TestToolExecutor:
     @pytest.mark.asyncio
     async def test_execute_tool_calls_with_error(self, tool_executor, mock_tool_call):
         """Test execute_tool_calls with tool execution error."""
-        # Setup
         async def failing_tool_function(**kwargs):
             raise RuntimeError("Tool execution failed")
 
         tool_executor.registry.get_tool_function.return_value = failing_tool_function
 
-        # Execute
         results = await tool_executor.execute_tool_calls([mock_tool_call])
 
-        # Verify
         assert len(results) == 1
         assert results[0].role == "tool"
         assert results[0].tool_call_id == "call_123"
@@ -117,61 +107,51 @@ class TestToolExecutor:
     @pytest.mark.asyncio
     async def test_execute_tool_calls_custom_execution_id(self, tool_executor, mock_tool_call):
         """Test execute_tool_calls with custom execution ID."""
-        # Setup
         async def mock_tool_function(**kwargs):
             return "result"
 
         tool_executor.registry.get_tool_function.return_value = mock_tool_function
 
-        # Execute
         results = await tool_executor.execute_tool_calls([mock_tool_call], execution_id="custom-id")
 
-        # Verify
         assert len(results) == 1
 
     @pytest.mark.asyncio
     async def test_execute_single_tool_invalid_json(self, tool_executor):
         """Test _execute_single_tool with invalid JSON arguments."""
-        # Setup
         call = MagicMock(spec=ToolCall)
         call.id = "call_123"
         call.function = MagicMock()
         call.function.name = "test_tool"
         call.function.arguments = "invalid json"
 
-        # Execute and verify
         with pytest.raises(ValueError, match="Invalid JSON in tool arguments"):
             await tool_executor._execute_single_tool(call, "exec-123", 0)
 
     @pytest.mark.asyncio
     async def test_execute_single_tool_non_dict_args(self, tool_executor):
         """Test _execute_single_tool with non-dictionary arguments."""
-        # Setup
         call = MagicMock(spec=ToolCall)
         call.id = "call_123"
         call.function = MagicMock()
         call.function.name = "test_tool"
         call.function.arguments = '["not", "a", "dict"]'
 
-        # Execute and verify
         with pytest.raises(ValueError, match="Tool arguments must be a dictionary"):
             await tool_executor._execute_single_tool(call, "exec-123", 0)
 
     @pytest.mark.asyncio
     async def test_execute_single_tool_unknown_tool(self, tool_executor, mock_tool_call):
         """Test _execute_single_tool with unknown tool."""
-        # Setup
         tool_executor.registry.get_tool_function.side_effect = ValueError("Tool not found")
         tool_executor.registry.list_tool_names.return_value = ["other_tool"]
 
-        # Execute and verify
         with pytest.raises(ValueError, match="Tool not found"):
             await tool_executor._execute_single_tool(mock_tool_call, "exec-123", 0)
 
     @pytest.mark.asyncio
     async def test_execute_single_tool_various_result_types(self, tool_executor, mock_tool_call):
         """Test _execute_single_tool with various result types."""
-        # Test with object having json() method
         result_with_json = MagicMock()
         result_with_json.json.return_value = '{"type": "json_method"}'
 
@@ -182,7 +162,6 @@ class TestToolExecutor:
         result = await tool_executor._execute_single_tool(mock_tool_call, "exec-123", 0)
         assert result.content == '{"type": "json_method"}'
 
-        # Test with object having model_dump() method
         result_with_dump = MagicMock()
         result_with_dump.model_dump.return_value = {"type": "model_dump"}
         del result_with_dump.json  # Ensure json method doesn't exist
@@ -194,7 +173,6 @@ class TestToolExecutor:
         result = await tool_executor._execute_single_tool(mock_tool_call, "exec-123", 0)
         assert json.loads(result.content) == {"type": "model_dump"}
 
-        # Test with dict result
         async def tool_dict(**kwargs):
             return {"type": "dict"}
 
@@ -202,7 +180,6 @@ class TestToolExecutor:
         result = await tool_executor._execute_single_tool(mock_tool_call, "exec-123", 0)
         assert json.loads(result.content) == {"type": "dict"}
 
-        # Test with primitive types
         async def tool_string(**kwargs):
             return "simple string"
 
@@ -210,7 +187,6 @@ class TestToolExecutor:
         result = await tool_executor._execute_single_tool(mock_tool_call, "exec-123", 0)
         assert result.content == '"simple string"'
 
-        # Test with custom object (converts to string)
         class CustomObject:
             def __str__(self):
                 return "custom object string"
@@ -224,17 +200,14 @@ class TestToolExecutor:
 
     def test_serialize_result_various_types(self, tool_executor):
         """Test _serialize_result with various input types."""
-        # Test object with json method
         obj_with_json = MagicMock()
         obj_with_json.json.return_value = '{"json": true}'
         assert tool_executor._serialize_result(obj_with_json) == '{"json": true}'
 
-        # Test object with model_dump
         obj_with_dump = MagicMock(spec=["model_dump"])
         obj_with_dump.model_dump.return_value = {"dump": True}
         assert tool_executor._serialize_result(obj_with_dump) == '{"dump": true}'
 
-        # Test basic types
         assert tool_executor._serialize_result({"dict": True}) == '{"dict": true}'
         assert tool_executor._serialize_result([1, 2, 3]) == '[1, 2, 3]'
         assert tool_executor._serialize_result("string") == '"string"'
@@ -243,7 +216,6 @@ class TestToolExecutor:
         assert tool_executor._serialize_result(True) == 'true'
         assert tool_executor._serialize_result(None) == 'null'
 
-        # Test custom object
         class Custom:
             def __str__(self):
                 return "custom_str"
@@ -268,7 +240,6 @@ class TestToolExecutor:
 
     def test_create_error_message_missing_attributes(self, tool_executor):
         """Test _create_error_message with missing attributes."""
-        # Create a broken tool call object
         broken_call = MagicMock()
         del broken_call.id  # Remove id attribute
         del broken_call.function  # Remove function attribute
@@ -305,25 +276,20 @@ class TestToolExecutor:
     @patch("app.services.llm.tool_executor.logger")
     async def test_logging_details(self, mock_logger, tool_executor, mock_tool_call):
         """Test detailed logging throughout execution."""
-        # Setup
         async def mock_tool_function(**kwargs):
             return {"result": "success"}
 
         tool_executor.registry.get_tool_function.return_value = mock_tool_function
 
-        # Execute
         await tool_executor.execute_tool_calls([mock_tool_call], execution_id="test-exec")
 
-        # Verify logging calls
         debug_calls = [call[0][0] for call in mock_logger.debug.call_args_list]
         info_calls = [call[0][0] for call in mock_logger.info.call_args_list]
 
-        # Should log individual tool execution
         assert any("Executing individual tool call" in call for call in debug_calls)
         assert any("Executing tool function" in call for call in debug_calls)
         assert any("Tool function executed successfully" in call for call in debug_calls)
 
-        # Should log batch info
         assert any("Starting tool execution batch" in call for call in info_calls)
         assert any("Tool call executed successfully" in call for call in info_calls)
         assert any("Tool execution batch completed" in call for call in info_calls)

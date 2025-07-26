@@ -42,7 +42,6 @@ class TestConversationSimulator:
         goal = "Help user understand async programming"
         max_tokens = 100
 
-        # Mock LLM response with simulated conversation
         expected_simulation = {
             "simulation": [
                 {"role": "assistant", "content": "Async/await is useful for I/O-bound operations"},
@@ -61,17 +60,14 @@ class TestConversationSimulator:
 
         mock_llm_service.query_llm = AsyncMock(return_value=expected_simulation)
 
-        # Execute
         result = await simulator.simulate_conversation(
             sample_messages, depth, goal, max_tokens
         )
 
-        # Verify
         assert result == expected_simulation
         assert len(result["simulation"]) == 6  # 3 exchanges * 2 messages each
         assert len(result["user_reactions"]) == 3
 
-        # Verify LLM call
         mock_llm_service.query_llm.assert_called_once()
         call_args = mock_llm_service.query_llm.call_args
         assert call_args.kwargs["json_response"] is True
@@ -103,7 +99,6 @@ class TestConversationSimulator:
 
         assert result == expected_simulation
 
-        # Check that goal section is not in prompt
         messages = mock_llm_service.query_llm.call_args.kwargs["messages"]
         system_prompt = messages[0]
         assert "<conversation_goal>" not in system_prompt.content
@@ -124,7 +119,6 @@ class TestConversationSimulator:
                 sample_messages, depth, goal, max_tokens
             )
 
-            # Should return empty simulation
             assert result == {"simulation": [], "user_reactions": []}
 
             mock_logger.error.assert_called_once_with(
@@ -139,7 +133,6 @@ class TestConversationSimulator:
         depth = 2
         max_tokens = 100
 
-        # Mock response missing user_reactions
         partial_response = {
             "simulation": [
                 {"role": "assistant", "content": "Response"},
@@ -153,7 +146,6 @@ class TestConversationSimulator:
             sample_messages, depth, None, max_tokens
         )
 
-        # Should handle missing keys gracefully
         assert result["simulation"] == partial_response["simulation"]
         assert result["user_reactions"] == []  # Default empty list
 
@@ -165,7 +157,6 @@ class TestConversationSimulator:
         depth = 2
         max_tokens = 100
 
-        # Mock response without simulation key
         mock_llm_service.query_llm = AsyncMock(return_value={"user_reactions": ["Reaction"]})
 
         result = await simulator.simulate_conversation(
@@ -206,7 +197,6 @@ class TestConversationSimulator:
         """Test simulation with different depth values."""
         max_tokens = 100
 
-        # Test depth 1
         mock_llm_service.query_llm = AsyncMock(return_value={
             "simulation": [
                 {"role": "assistant", "content": "Single response"},
@@ -219,7 +209,6 @@ class TestConversationSimulator:
         assert len(result["simulation"]) == 2
         assert len(result["user_reactions"]) == 1
 
-        # Verify depth is in prompt
         prompt = mock_llm_service.query_llm.call_args.kwargs["messages"][0]
         assert "1" in prompt.content
 
@@ -261,15 +250,12 @@ class TestConversationSimulator:
 
         await simulator.simulate_conversation(sample_messages, depth, goal, max_tokens)
 
-        # Verify message structure
         messages = mock_llm_service.query_llm.call_args.kwargs["messages"]
         assert len(messages) == len(sample_messages) + 1
 
-        # First message should be system prompt
         assert messages[0].role == "system"
         assert "Simulate realistic conversation continuation" in messages[0].content
 
-        # Rest should be conversation history
         assert messages[1:] == sample_messages
 
     @pytest.mark.asyncio
@@ -284,7 +270,6 @@ class TestConversationSimulator:
 
         await simulator.simulate_conversation(sample_messages, depth, None, max_tokens)
 
-        # Verify token multiplier is applied
         expected_tokens = max_tokens * ResponseConfig.TOKEN_MULTIPLIER_SIMULATION
         actual_tokens = mock_llm_service.query_llm.call_args.kwargs["max_tokens"]
         assert actual_tokens == expected_tokens
@@ -317,6 +302,5 @@ class TestConversationSimulator:
 
         assert result == expected_simulation
 
-        # Verify complex goal is in prompt
         prompt = mock_llm_service.query_llm.call_args.kwargs["messages"][0]
         assert complex_goal in prompt.content

@@ -45,10 +45,8 @@ class TestToolRegistry:
         """Test that tools are collected lazily on first access."""
         registry = ToolRegistry()
 
-        # Not initialized yet
         assert not registry._initialized
 
-        # Access tools property triggers initialization
         with patch.object(registry, "_collect_tools") as mock_collect:
             _ = registry.tools
             mock_collect.assert_called_once()
@@ -57,11 +55,9 @@ class TestToolRegistry:
     @patch("app.utils.tool_registry.AbstractTool.__subclasses__")
     def test_collect_tools_success(self, mock_subclasses):
         """Test successful tool collection."""
-        # Set up mock subclasses
         mock_subclasses.return_value = [MockTool]
 
         registry = ToolRegistry()
-        # Initialize the tools dict before collecting
         registry._tools = {}
         registry._collect_tools()
 
@@ -75,22 +71,17 @@ class TestToolRegistry:
     @patch("app.utils.tool_registry.logger")
     def test_collect_tools_with_error(self, mock_logger, mock_subclasses):
         """Test tool collection handles errors gracefully."""
-        # Set up mock subclasses with one broken tool
         mock_subclasses.return_value = [MockTool, BrokenTool]
 
         registry = ToolRegistry()
-        # Initialize the tools dict before collecting
         registry._tools = {}
         registry._collect_tools()
 
-        # Should collect working tool
         assert len(registry._tools) == 1
         assert "MockTool" in registry._tools
 
-        # Should not collect broken tool
         assert "BrokenTool" not in registry._tools
 
-        # Should log error for broken tool
         mock_logger.error.assert_called()
         error_call = mock_logger.error.call_args
         assert "Failed to collect tool BrokenTool" in error_call[0][0]
@@ -102,12 +93,10 @@ class TestToolRegistry:
 
         registry = ToolRegistry()
 
-        # Get existing tool
         tool = registry.get_tool("MockTool")
         assert tool is not None
         assert tool["class"] == MockTool
 
-        # Get non-existent tool
         tool = registry.get_tool("NonExistentTool")
         assert tool is None
 
@@ -118,12 +107,10 @@ class TestToolRegistry:
 
         registry = ToolRegistry()
 
-        # Get schemas for existing tools
         schemas = registry.get_tool_schemas(["MockTool"])
         assert len(schemas) == 1
         assert schemas[0] == {"name": "MockTool", "description": "Mock tool"}
 
-        # Verify model_dump was called with exclude_none
         MockTool.tool_schema.model_dump.assert_called_with(exclude_none=True)
 
     @patch("app.utils.tool_registry.AbstractTool.__subclasses__")
@@ -146,7 +133,6 @@ class TestToolRegistry:
 
         registry = ToolRegistry()
 
-        # Get function for existing tool
         func = registry.get_tool_function("MockTool")
         assert callable(func)
         assert func("test") == "MockTool: test"
@@ -182,18 +168,15 @@ class TestToolRegistry:
 
         registry = ToolRegistry()
 
-        # Initialize registry
         _ = registry.tools
         assert registry._initialized
 
-        # Reset
         registry.reset()
 
         assert registry._tools is None
         assert not registry._initialized
         mock_logger.debug.assert_called_with("Tool registry reset")
 
-        # Should re-initialize on next access
         _ = registry.tools
         assert registry._initialized
 
@@ -215,15 +198,12 @@ class TestToolRegistry:
         mock_subclasses.return_value = [MockTool]
 
         registry = ToolRegistry()
-        # Initialize the tools dict before collecting
         registry._tools = {}
         registry._collect_tools()
 
-        # Should log each collected tool
         debug_calls = [call[0][0] for call in mock_logger.debug.call_args_list]
         assert any("Collected tool: MockTool" in call for call in debug_calls)
 
-        # Should log completion summary
         info_calls = [call for call in mock_logger.info.call_args_list]
         assert len(info_calls) == 1
         assert "Tool collection completed" in info_calls[0][0][0]

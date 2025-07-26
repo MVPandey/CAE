@@ -60,7 +60,6 @@ class TestConversationBranch:
         with pytest.raises(ValidationError) as exc_info:
             ConversationBranch(
                 response="Test response",
-                # Missing required fields
             )
 
         errors = exc_info.value.errors()
@@ -169,7 +168,6 @@ class TestConversationAnalysisResponse:
             ConversationAnalysisResponse(
                 id=uuid4(),
                 chat_id=uuid4(),
-                # Missing other required fields
             )
 
         errors = exc_info.value.errors()

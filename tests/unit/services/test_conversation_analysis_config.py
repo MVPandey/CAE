@@ -42,7 +42,6 @@ class TestScoringConfig:
         assert ScoringConfig.SCORE_WEIGHT_QUALITY == 0.7
         assert ScoringConfig.SCORE_WEIGHT_VISITS == 0.3
 
-        # Weights should sum to 1.0
         total_weight = ScoringConfig.SCORE_WEIGHT_QUALITY + ScoringConfig.SCORE_WEIGHT_VISITS
         assert abs(total_weight - 1.0) < 0.0001  # Allow for floating point precision
 
@@ -150,29 +149,23 @@ class TestConfigInteractions:
         """Test that config constants cannot be modified on instances."""
         config = MCTSConfig()
 
-        # Constants should be class attributes, not instance attributes
         assert not hasattr(config, "__dict__") or "DEFAULT_MAX_CHILDREN" not in config.__dict__
 
     def test_scoring_weights_valid_for_algorithm(self):
         """Test scoring weights are valid for use in algorithms."""
-        # Quality weight should be higher than visits weight for meaningful scoring
         assert ScoringConfig.SCORE_WEIGHT_QUALITY > ScoringConfig.SCORE_WEIGHT_VISITS
 
-        # Both weights should be between 0 and 1
         assert 0 < ScoringConfig.SCORE_WEIGHT_QUALITY < 1
         assert 0 < ScoringConfig.SCORE_WEIGHT_VISITS < 1
 
     def test_mcts_pruning_config_consistency(self):
         """Test MCTS pruning configuration is internally consistent."""
-        # Pruning interval should be less than typical tree depths
         assert MCTSConfig.PRUNING_INTERVAL > 0
 
-        # Min visits for pruning should be reasonable
         assert MCTSConfig.MIN_VISITS_FOR_PRUNING > 0
         assert MCTSConfig.MIN_VISITS_FOR_PRUNING < 100  # Reasonable upper bound
 
     def test_response_multipliers_ordering(self):
         """Test token multipliers have logical ordering."""
-        # Simulation typically needs more tokens than initial or analysis
         assert ResponseConfig.TOKEN_MULTIPLIER_SIMULATION >= ResponseConfig.TOKEN_MULTIPLIER_INITIAL
         assert ResponseConfig.TOKEN_MULTIPLIER_SIMULATION >= ResponseConfig.TOKEN_MULTIPLIER_ANALYSIS
