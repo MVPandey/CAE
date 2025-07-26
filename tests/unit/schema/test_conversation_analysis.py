@@ -22,10 +22,7 @@ class TestConversationBranch:
             response="Hello, how can I help you?",
             simulated_user_reactions=["I need help with Python", "Just browsing"],
             score=0.85,
-            sub_history=[
-                {"user": "I need help with Python"},
-                {"assistant": "I'd be happy to help with Python!"}
-            ],
+            sub_history=[{"user": "I need help with Python"}, {"assistant": "I'd be happy to help with Python!"}],
             general_metrics={"coherence": 0.9, "relevance": 0.8},
             goal_metrics={"helpfulness": 0.85, "engagement": 0.75},
         )
@@ -48,7 +45,7 @@ class TestConversationBranch:
             goal_metrics={},
             visits=10,
             parent_index=0,
-            children_indices=[2, 3, 4]
+            children_indices=[2, 3, 4],
         )
 
         assert branch.visits == 10
@@ -63,12 +60,12 @@ class TestConversationBranch:
             )
 
         errors = exc_info.value.errors()
-        field_names = {error['loc'][0] for error in errors}
-        assert 'simulated_user_reactions' in field_names
-        assert 'score' in field_names
-        assert 'sub_history' in field_names
-        assert 'general_metrics' in field_names
-        assert 'goal_metrics' in field_names
+        field_names = {error["loc"][0] for error in errors}
+        assert "simulated_user_reactions" in field_names
+        assert "score" in field_names
+        assert "sub_history" in field_names
+        assert "general_metrics" in field_names
+        assert "goal_metrics" in field_names
 
 
 class TestConversationAnalysisRequest:
@@ -97,7 +94,7 @@ class TestConversationAnalysisRequest:
             simulation_depth=5,
             max_tokens=500,
             mcts_iterations=20,
-            exploration_constant=2.0
+            exploration_constant=2.0,
         )
 
         assert request.chat_id == chat_id
@@ -114,7 +111,7 @@ class TestConversationAnalysisRequest:
             ConversationAnalysisRequest(chat_id="not-a-uuid")
 
         errors = exc_info.value.errors()
-        assert any(error['loc'][0] == 'chat_id' for error in errors)
+        assert any(error["loc"][0] == "chat_id" for error in errors)
 
 
 class TestConversationAnalysisResponse:
@@ -148,7 +145,7 @@ class TestConversationAnalysisResponse:
             selected_response="Response 1",
             analysis="Selected based on highest score",
             overall_scores={"average_score": 0.6, "best_score": 0.7},
-            mcts_statistics={"iterations": 10, "time_elapsed": 1.5}
+            mcts_statistics={"iterations": 10, "time_elapsed": 1.5},
         )
 
         assert response.id == analysis_id
@@ -171,14 +168,14 @@ class TestConversationAnalysisResponse:
             )
 
         errors = exc_info.value.errors()
-        field_names = {error['loc'][0] for error in errors}
-        assert 'created_at' in field_names
-        assert 'branches' in field_names
-        assert 'selected_branch_index' in field_names
-        assert 'selected_response' in field_names
-        assert 'analysis' in field_names
-        assert 'overall_scores' in field_names
-        assert 'mcts_statistics' in field_names
+        field_names = {error["loc"][0] for error in errors}
+        assert "created_at" in field_names
+        assert "branches" in field_names
+        assert "selected_branch_index" in field_names
+        assert "selected_response" in field_names
+        assert "analysis" in field_names
+        assert "overall_scores" in field_names
+        assert "mcts_statistics" in field_names
 
     def test_response_with_no_goal(self):
         """Test response with no conversation goal."""
@@ -203,7 +200,7 @@ class TestConversationAnalysisResponse:
             selected_response="Response",
             analysis="Analysis",
             overall_scores={},
-            mcts_statistics={}
+            mcts_statistics={},
         )
 
         assert response.conversation_goal is None

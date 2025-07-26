@@ -46,11 +46,7 @@ class TestChat:
         user_id = uuid4()
         created_at = datetime(2024, 1, 1, 12, 0, 0)
 
-        chat = Chat(
-            id=chat_id,
-            user_id=user_id,
-            created_at=created_at
-        )
+        chat = Chat(id=chat_id, user_id=user_id, created_at=created_at)
 
         assert chat.id == chat_id
         assert chat.user_id == user_id
@@ -58,6 +54,7 @@ class TestChat:
 
     def test_chat_from_attributes(self):
         """Test that Chat can be created from ORM attributes."""
+
         class MockORMChat:
             id = uuid4()
             user_id = uuid4()
@@ -76,7 +73,7 @@ class TestChat:
             Chat()
 
         errors = exc_info.value.errors()
-        assert any(error['loc'][0] == 'user_id' for error in errors)
+        assert any(error["loc"][0] == "user_id" for error in errors)
 
     def test_chat_invalid_user_id(self):
         """Test that invalid user_id raises ValidationError."""
@@ -84,7 +81,7 @@ class TestChat:
             Chat(user_id="not-a-uuid")
 
         errors = exc_info.value.errors()
-        assert any(error['loc'][0] == 'user_id' for error in errors)
+        assert any(error["loc"][0] == "user_id" for error in errors)
 
 
 class TestChatMessage:
@@ -93,11 +90,7 @@ class TestChatMessage:
     def test_chat_message_creation_minimal(self):
         """Test creating a ChatMessage with minimal required fields."""
         chat_id = uuid4()
-        message = ChatMessage(
-            chat_id=chat_id,
-            role=ChatRole.USER,
-            content="Hello, world!"
-        )
+        message = ChatMessage(chat_id=chat_id, role=ChatRole.USER, content="Hello, world!")
 
         assert isinstance(message.id, UUID)
         assert message.chat_id == chat_id
@@ -113,10 +106,7 @@ class TestChatMessage:
         message_id = uuid4()
         chat_id = uuid4()
         created_at = datetime(2024, 1, 1, 12, 0, 0)
-        tool_calls = {
-            "function": "get_weather",
-            "arguments": {"location": "San Francisco"}
-        }
+        tool_calls = {"function": "get_weather", "arguments": {"location": "San Francisco"}}
 
         message = ChatMessage(
             id=message_id,
@@ -126,7 +116,7 @@ class TestChatMessage:
             tool_calls=tool_calls,
             tool_call_id="call_123",
             created_at=created_at,
-            embedding=0.5
+            embedding=0.5,
         )
 
         assert message.id == message_id
@@ -143,21 +133,14 @@ class TestChatMessage:
         chat_id = uuid4()
 
         for role in ChatRole:
-            message = ChatMessage(
-                chat_id=chat_id,
-                role=role,
-                content=f"Message from {role.value}"
-            )
+            message = ChatMessage(chat_id=chat_id, role=role, content=f"Message from {role.value}")
             assert message.role == role
 
     def test_chat_message_tool_message(self):
         """Test creating a tool message."""
         chat_id = uuid4()
         message = ChatMessage(
-            chat_id=chat_id,
-            role=ChatRole.TOOL,
-            content="Weather data: 72°F, sunny",
-            tool_call_id="call_123"
+            chat_id=chat_id, role=ChatRole.TOOL, content="Weather data: 72°F, sunny", tool_call_id="call_123"
         )
 
         assert message.role == ChatRole.TOOL
@@ -165,6 +148,7 @@ class TestChatMessage:
 
     def test_chat_message_from_attributes(self):
         """Test that ChatMessage can be created from ORM attributes."""
+
         class MockORMMessage:
             id = uuid4()
             chat_id = uuid4()
@@ -189,22 +173,18 @@ class TestChatMessage:
             ChatMessage()
 
         errors = exc_info.value.errors()
-        field_names = {error['loc'][0] for error in errors}
-        assert 'chat_id' in field_names
-        assert 'role' in field_names
-        assert 'content' in field_names
+        field_names = {error["loc"][0] for error in errors}
+        assert "chat_id" in field_names
+        assert "role" in field_names
+        assert "content" in field_names
 
     def test_chat_message_invalid_role(self):
         """Test that invalid role raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            ChatMessage(
-                chat_id=uuid4(),
-                role="invalid_role",
-                content="Test"
-            )
+            ChatMessage(chat_id=uuid4(), role="invalid_role", content="Test")
 
         errors = exc_info.value.errors()
-        assert any(error['loc'][0] == 'role' for error in errors)
+        assert any(error["loc"][0] == "role" for error in errors)
 
     def test_chat_message_arbitrary_types_allowed(self):
         """Test that arbitrary types are allowed in tool_calls."""
@@ -213,16 +193,13 @@ class TestChatMessage:
         complex_tool_calls = {
             "functions": [
                 {"name": "func1", "params": {"a": 1, "b": [1, 2, 3]}},
-                {"name": "func2", "params": {"nested": {"deep": True}}}
+                {"name": "func2", "params": {"nested": {"deep": True}}},
             ],
-            "metadata": {"timestamp": datetime.now(UTC).isoformat()}
+            "metadata": {"timestamp": datetime.now(UTC).isoformat()},
         }
 
         message = ChatMessage(
-            chat_id=chat_id,
-            role=ChatRole.ASSISTANT,
-            content="Using tools",
-            tool_calls=complex_tool_calls
+            chat_id=chat_id, role=ChatRole.ASSISTANT, content="Using tools", tool_calls=complex_tool_calls
         )
 
         assert message.tool_calls == complex_tool_calls

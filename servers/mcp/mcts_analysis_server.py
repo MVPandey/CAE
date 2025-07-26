@@ -45,7 +45,11 @@ signal.signal(signal.SIGTERM, handle_shutdown)
 signal.signal(signal.SIGINT, handle_shutdown)
 
 
-@retry(stop=stop_after_attempt(RETRY_MAX_ATTEMPTS), wait=wait_exponential(multiplier=RETRY_MULTIPLIER, min=RETRY_MIN_WAIT, max=RETRY_MAX_WAIT), reraise=True)
+@retry(
+    stop=stop_after_attempt(RETRY_MAX_ATTEMPTS),
+    wait=wait_exponential(multiplier=RETRY_MULTIPLIER, min=RETRY_MIN_WAIT, max=RETRY_MAX_WAIT),
+    reraise=True,
+)
 async def initialize_services():
     """Initialize all required services with retry logic."""
     global llm_service, response_generator, simulator, scorer, analyzer, mcts_algorithm
@@ -108,9 +112,9 @@ def create_mcp_server(initialize_on_startup: bool = True) -> FastMCP:
     )
 
 
-mcp = create_mcp_server(initialize_on_startup=False)  # Initialization is deferred to allow transport-specific handling. Ensure transport mechanisms trigger initialization when required.
-
-
+mcp = create_mcp_server(
+    initialize_on_startup=False
+)  # Initialization is deferred to allow transport-specific handling. Ensure transport mechanisms trigger initialization when required.
 
 
 @mcp.tool

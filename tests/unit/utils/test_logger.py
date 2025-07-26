@@ -23,7 +23,7 @@ def create_loguru_record(
     message="Test message",
     module="test_module",
     extra=None,
-    exception=None
+    exception=None,
 ):
     """Factory function to create realistic loguru record structure."""
     if time is None:
@@ -43,7 +43,7 @@ def create_loguru_record(
         "message": message,
         "module": module,
         "extra": extra,
-        "exception": exception
+        "exception": exception,
     }
 
 
@@ -117,7 +117,7 @@ class TestFormatRecord:
             line=42,
             message="Test message",
             extra={},
-            exception=None
+            exception=None,
         )
 
         result = format_record(record)
@@ -141,9 +141,9 @@ class TestFormatRecord:
             extra={
                 "user_id": "123",
                 "request_id": "abc-def",
-                "_internal": "hidden"  # Should be filtered
+                "_internal": "hidden",  # Should be filtered
             },
-            exception=None
+            exception=None,
         )
 
         result = format_record(record)
@@ -162,10 +162,8 @@ class TestFormatRecord:
             function="test_func",
             line=42,
             message="Test message",
-            extra={
-                "long_value": long_string
-            },
-            exception=None
+            extra={"long_value": long_string},
+            exception=None,
         )
 
         result = format_record(record)
@@ -183,10 +181,8 @@ class TestFormatRecord:
             function="test_func",
             line=42,
             message="Test message",
-            extra={
-                "json_like": "{key: value}"
-            },
-            exception=None
+            extra={"json_like": "{key: value}"},
+            exception=None,
         )
 
         result = format_record(record)
@@ -211,7 +207,7 @@ class TestFormatRecordJson:
             message="Test message",
             module="test_module",
             extra={},
-            exception=None
+            exception=None,
         )
 
         result = format_record_json(record)
@@ -241,9 +237,9 @@ class TestFormatRecordJson:
             extra={
                 "user_id": "123",
                 "request_id": "abc-def",
-                "_internal": "hidden"  # Should be filtered
+                "_internal": "hidden",  # Should be filtered
             },
-            exception=None
+            exception=None,
         )
 
         result = format_record_json(record)
@@ -272,7 +268,7 @@ class TestFormatRecordJson:
             message="Error occurred",
             module="test_module",
             extra={},
-            exception=mock_exception
+            exception=mock_exception,
         )
 
         result = format_record_json(record)

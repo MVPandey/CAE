@@ -65,6 +65,7 @@ class TestApp:
 
         middleware_classes = [m.cls for m in app.user_middleware]
         from fastapi.middleware.cors import CORSMiddleware
+
         assert CORSMiddleware in middleware_classes
 
     def test_routers_included(self):
@@ -156,8 +157,7 @@ class TestExceptionHandlers:
         mock_request.method = "POST"
 
         exc = RequestValidationError(
-            [{"loc": ("body", "field"), "msg": "field required", "type": "value_error"}],
-            body={"incomplete": "data"}
+            [{"loc": ("body", "field"), "msg": "field required", "type": "value_error"}], body={"incomplete": "data"}
         )
 
         response = await validation_exception_handler(mock_request, exc)
@@ -242,7 +242,7 @@ class TestMainModule:
         source = inspect.getsource(app.main)
 
         assert 'if __name__ == "__main__":' in source
-        assert 'run_uvicorn()' in source
+        assert "run_uvicorn()" in source
 
     @patch("app.main.uvicorn")
     def test_run_uvicorn_function(self, mock_uvicorn):

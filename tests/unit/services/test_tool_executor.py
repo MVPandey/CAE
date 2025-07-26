@@ -42,6 +42,7 @@ class TestToolExecutor:
     @patch("app.services.llm.tool_executor.logger")
     async def test_execute_tool_calls_single_success(self, mock_logger, tool_executor, mock_tool_call):
         """Test execute_tool_calls with single successful call."""
+
         async def mock_tool_function(param):
             return {"result": param}
 
@@ -88,6 +89,7 @@ class TestToolExecutor:
     @pytest.mark.asyncio
     async def test_execute_tool_calls_with_error(self, tool_executor, mock_tool_call):
         """Test execute_tool_calls with tool execution error."""
+
         async def failing_tool_function(**kwargs):
             raise RuntimeError("Tool execution failed")
 
@@ -107,6 +109,7 @@ class TestToolExecutor:
     @pytest.mark.asyncio
     async def test_execute_tool_calls_custom_execution_id(self, tool_executor, mock_tool_call):
         """Test execute_tool_calls with custom execution ID."""
+
         async def mock_tool_function(**kwargs):
             return "result"
 
@@ -209,12 +212,12 @@ class TestToolExecutor:
         assert tool_executor._serialize_result(obj_with_dump) == '{"dump": true}'
 
         assert tool_executor._serialize_result({"dict": True}) == '{"dict": true}'
-        assert tool_executor._serialize_result([1, 2, 3]) == '[1, 2, 3]'
+        assert tool_executor._serialize_result([1, 2, 3]) == "[1, 2, 3]"
         assert tool_executor._serialize_result("string") == '"string"'
-        assert tool_executor._serialize_result(123) == '123'
-        assert tool_executor._serialize_result(123.45) == '123.45'
-        assert tool_executor._serialize_result(True) == 'true'
-        assert tool_executor._serialize_result(None) == 'null'
+        assert tool_executor._serialize_result(123) == "123"
+        assert tool_executor._serialize_result(123.45) == "123.45"
+        assert tool_executor._serialize_result(True) == "true"
+        assert tool_executor._serialize_result(None) == "null"
 
         class Custom:
             def __str__(self):
@@ -276,6 +279,7 @@ class TestToolExecutor:
     @patch("app.services.llm.tool_executor.logger")
     async def test_logging_details(self, mock_logger, tool_executor, mock_tool_call):
         """Test detailed logging throughout execution."""
+
         async def mock_tool_function(**kwargs):
             return {"result": "success"}
 

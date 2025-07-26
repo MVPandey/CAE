@@ -33,24 +33,24 @@ class TestCleanJsonResponse:
 
     def test_clean_json_response_markdown_block(self):
         """Test extracting JSON from markdown code block."""
-        response = '''Here's the JSON:
+        response = """Here's the JSON:
         ```json
         {
             "name": "test",
             "value": 123
         }
         ```
-        '''
+        """
         result = clean_json_response(response)
         assert result == {"name": "test", "value": 123}
 
     def test_clean_json_response_markdown_block_no_language(self):
         """Test extracting JSON from markdown block without language specification."""
-        response = '''
+        response = """
         ```
         {"items": ["a", "b", "c"]}
         ```
-        '''
+        """
         result = clean_json_response(response)
         assert result == {"items": ["a", "b", "c"]}
 
@@ -68,9 +68,9 @@ class TestCleanJsonResponse:
 
     def test_clean_json_response_mixed_content(self):
         """Test extracting JSON from mixed content."""
-        response = '''The result is as follows:
+        response = """The result is as follows:
         {"status": "success", "data": [1, 2, 3]}
-        That's the response.'''
+        That's the response."""
         result = clean_json_response(response)
         assert result == {"status": "success", "data": [1, 2, 3]}
 
@@ -121,12 +121,12 @@ class TestSafeJsonDumps:
     def test_safe_json_dumps_basic_types(self):
         """Test serializing basic Python types."""
         assert safe_json_dumps({"key": "value"}) == '{"key": "value"}'
-        assert safe_json_dumps([1, 2, 3]) == '[1, 2, 3]'
+        assert safe_json_dumps([1, 2, 3]) == "[1, 2, 3]"
         assert safe_json_dumps("string") == '"string"'
-        assert safe_json_dumps(42) == '42'
-        assert safe_json_dumps(3.14) == '3.14'
-        assert safe_json_dumps(True) == 'true'
-        assert safe_json_dumps(None) == 'null'
+        assert safe_json_dumps(42) == "42"
+        assert safe_json_dumps(3.14) == "3.14"
+        assert safe_json_dumps(True) == "true"
+        assert safe_json_dumps(None) == "null"
 
     def test_safe_json_dumps_with_kwargs(self):
         """Test passing additional kwargs to json.dumps."""
@@ -147,6 +147,7 @@ class TestSafeJsonDumps:
     @patch("app.utils.json_utils.logger")
     def test_safe_json_dumps_error_logging(self, mock_logger):
         """Test that serialization errors are logged."""
+
         class NonSerializable:
             def __str__(self):
                 return "NonSerializable object"
@@ -164,14 +165,8 @@ class TestSafeJsonDumps:
     def test_safe_json_dumps_complex_nested(self):
         """Test serializing complex nested structures."""
         data = {
-            "users": [
-                {"id": 1, "name": "Alice", "active": True},
-                {"id": 2, "name": "Bob", "active": False}
-            ],
-            "metadata": {
-                "version": "1.0",
-                "count": 2
-            }
+            "users": [{"id": 1, "name": "Alice", "active": True}, {"id": 2, "name": "Bob", "active": False}],
+            "metadata": {"version": "1.0", "count": 2},
         }
         result = safe_json_dumps(data)
         parsed = json.loads(result)
@@ -179,7 +174,7 @@ class TestSafeJsonDumps:
 
     def test_safe_json_dumps_with_custom_encoder(self):
         """Test that custom encoder arguments work."""
-        data = {"value": float('inf')}
+        data = {"value": float("inf")}
 
         result = safe_json_dumps(data, allow_nan=False)
 

@@ -1,4 +1,5 @@
 """Unit tests for MCTSAlgorithm."""
+
 import asyncio
 from unittest.mock import AsyncMock, Mock
 
@@ -31,7 +32,7 @@ def base_messages():
     """Create base conversation messages."""
     return [
         Message(role="user", content="I need help with my project"),
-        Message(role="assistant", content="I'd be happy to help you")
+        Message(role="assistant", content="I'd be happy to help you"),
     ]
 
 
@@ -41,7 +42,7 @@ def initial_responses():
     return [
         "What specific aspect of your project needs help?",
         "Can you tell me more about your project?",
-        "What challenges are you facing with your project?"
+        "What challenges are you facing with your project?",
     ]
 
 
@@ -53,7 +54,7 @@ def mcts_config():
         "simulation_depth": 3,
         "exploration_constant": 1.414,
         "goal": "Help user with their project",
-        "max_tokens": 100
+        "max_tokens": 100,
     }
 
 
@@ -61,31 +62,27 @@ class TestMCTSAlgorithm:
     """Test cases for MCTSAlgorithm."""
 
     @pytest.mark.asyncio
-    async def test_run_basic(
-        self, mcts_algorithm, base_messages, initial_responses, mcts_config
-    ):
+    async def test_run_basic(self, mcts_algorithm, base_messages, initial_responses, mcts_config):
         """Test basic MCTS run."""
         simulation_data = {
             "simulation": [
                 {"role": "user", "content": "It's a web app"},
-                {"role": "assistant", "content": "What framework are you using?"}
+                {"role": "assistant", "content": "What framework are you using?"},
             ],
-            "user_reactions": ["User is engaged"]
+            "user_reactions": ["User is engaged"],
         }
 
         score_data = {
             "general_metrics": {"clarity": 0.85, "relevance": 0.9},
             "goal_metrics": {"helpfulness": 0.88},
-            "overall_score": 0.87
+            "overall_score": 0.87,
         }
 
         mcts_algorithm.simulator.simulate_conversation = AsyncMock(return_value=simulation_data)
         mcts_algorithm.scorer.score_simulation = AsyncMock(return_value=score_data)
         mcts_algorithm.response_generator.generate_expansion_response = AsyncMock(return_value=None)
 
-        root_nodes, stats = await mcts_algorithm.run(
-            base_messages, initial_responses, mcts_config
-        )
+        root_nodes, stats = await mcts_algorithm.run(base_messages, initial_responses, mcts_config)
 
         assert len(root_nodes) == 3
         assert all(isinstance(node, MCTSNode) for node in root_nodes)
@@ -99,22 +96,14 @@ class TestMCTSAlgorithm:
             assert node.avg_score > 0
 
     @pytest.mark.asyncio
-    async def test_run_with_expansion(
-        self, mcts_algorithm, base_messages, initial_responses, mcts_config
-    ):
+    async def test_run_with_expansion(self, mcts_algorithm, base_messages, initial_responses, mcts_config):
         """Test MCTS run with node expansion."""
-        simulation_data = {
-            "simulation": [{"role": "user", "content": "Test"}],
-            "user_reactions": ["Neutral"]
-        }
+        simulation_data = {"simulation": [{"role": "user", "content": "Test"}], "user_reactions": ["Neutral"]}
 
-        score_data = {
-            "general_metrics": {"clarity": 0.8},
-            "goal_metrics": {},
-            "overall_score": 0.8
-        }
+        score_data = {"general_metrics": {"clarity": 0.8}, "goal_metrics": {}, "overall_score": 0.8}
 
         expansion_called = 0
+
         async def mock_expansion(*args, **kwargs):
             nonlocal expansion_called
             expansion_called += 1
@@ -122,13 +111,9 @@ class TestMCTSAlgorithm:
 
         mcts_algorithm.simulator.simulate_conversation = AsyncMock(return_value=simulation_data)
         mcts_algorithm.scorer.score_simulation = AsyncMock(return_value=score_data)
-        mcts_algorithm.response_generator.generate_expansion_response = AsyncMock(
-            side_effect=mock_expansion
-        )
+        mcts_algorithm.response_generator.generate_expansion_response = AsyncMock(side_effect=mock_expansion)
 
-        root_nodes, stats = await mcts_algorithm.run(
-            base_messages, initial_responses, mcts_config
-        )
+        root_nodes, stats = await mcts_algorithm.run(base_messages, initial_responses, mcts_config)
 
         assert stats["nodes_created"] > 3  # More than initial nodes
 
@@ -136,9 +121,7 @@ class TestMCTSAlgorithm:
         assert has_children
 
     @pytest.mark.asyncio
-    async def test_run_with_pruning(
-        self, mcts_algorithm, base_messages, initial_responses, mcts_config
-    ):
+    async def test_run_with_pruning(self, mcts_algorithm, base_messages, initial_responses, mcts_config):
         """Test MCTS run with branch pruning."""
         mcts_config["iterations"] = MCTSConfig.PRUNING_INTERVAL + 1
 
@@ -147,13 +130,9 @@ class TestMCTSAlgorithm:
                 return {
                     "general_metrics": {"clarity": 0.3},  # Low score
                     "goal_metrics": {},
-                    "overall_score": 0.3
+                    "overall_score": 0.3,
                 }
-            return {
-                "general_metrics": {"clarity": 0.85},
-                "goal_metrics": {},
-                "overall_score": 0.85
-            }
+            return {"general_metrics": {"clarity": 0.85}, "goal_metrics": {}, "overall_score": 0.85}
 
         simulation_data = {"simulation": [], "user_reactions": []}
 
@@ -161,9 +140,7 @@ class TestMCTSAlgorithm:
         mcts_algorithm.scorer.score_simulation = AsyncMock(side_effect=mock_score_simulation)
         mcts_algorithm.response_generator.generate_expansion_response = AsyncMock(return_value=None)
 
-        root_nodes, stats = await mcts_algorithm.run(
-            base_messages, initial_responses, mcts_config
-        )
+        root_nodes, stats = await mcts_algorithm.run(base_messages, initial_responses, mcts_config)
 
         assert stats["pruned_branches"] >= 0
 
@@ -212,39 +189,22 @@ class TestMCTSAlgorithm:
         assert selected in root.children
 
     @pytest.mark.asyncio
-    async def test_expand_and_simulate(
-        self, mcts_algorithm, base_messages
-    ):
+    async def test_expand_and_simulate(self, mcts_algorithm, base_messages):
         """Test node expansion and simulation."""
         node = MCTSNode("Test response")
         node.visits = 1  # Eligible for expansion
 
-        config = {
-            "goal": "Test goal",
-            "max_tokens": 100,
-            "simulation_depth": 2
-        }
+        config = {"goal": "Test goal", "max_tokens": 100, "simulation_depth": 2}
 
-        mcts_algorithm.response_generator.generate_expansion_response = AsyncMock(
-            return_value="New child response"
-        )
+        mcts_algorithm.response_generator.generate_expansion_response = AsyncMock(return_value="New child response")
 
-        simulation_data = {
-            "simulation": [{"role": "user", "content": "Great!"}],
-            "user_reactions": ["Positive"]
-        }
+        simulation_data = {"simulation": [{"role": "user", "content": "Great!"}], "user_reactions": ["Positive"]}
         mcts_algorithm.simulator.simulate_conversation = AsyncMock(return_value=simulation_data)
 
-        score_data = {
-            "general_metrics": {"clarity": 0.9},
-            "goal_metrics": {"success": 0.85},
-            "overall_score": 0.88
-        }
+        score_data = {"general_metrics": {"clarity": 0.9}, "goal_metrics": {"success": 0.85}, "overall_score": 0.88}
         mcts_algorithm.scorer.score_simulation = AsyncMock(return_value=score_data)
 
-        score, new_children = await mcts_algorithm._expand_and_simulate(
-            base_messages, node, config
-        )
+        score, new_children = await mcts_algorithm._expand_and_simulate(base_messages, node, config)
 
         assert score == 0.88
         assert len(new_children) == 1
@@ -255,18 +215,12 @@ class TestMCTSAlgorithm:
         assert node.goal_metrics == score_data["goal_metrics"]
 
     @pytest.mark.asyncio
-    async def test_expand_and_simulate_no_expansion(
-        self, mcts_algorithm, base_messages
-    ):
+    async def test_expand_and_simulate_no_expansion(self, mcts_algorithm, base_messages):
         """Test simulation without expansion."""
         node = MCTSNode("Test response")
         node.visits = 0  # Not eligible for expansion
 
-        config = {
-            "goal": None,
-            "max_tokens": 100,
-            "simulation_depth": 1
-        }
+        config = {"goal": None, "max_tokens": 100, "simulation_depth": 1}
 
         simulation_data = {"simulation": [], "user_reactions": []}
         score_data = {"general_metrics": {}, "goal_metrics": {}, "overall_score": 0.5}
@@ -275,9 +229,7 @@ class TestMCTSAlgorithm:
         mcts_algorithm.scorer.score_simulation = AsyncMock(return_value=score_data)
         mcts_algorithm.response_generator.generate_expansion_response = AsyncMock()
 
-        score, new_children = await mcts_algorithm._expand_and_simulate(
-            base_messages, node, config
-        )
+        score, new_children = await mcts_algorithm._expand_and_simulate(base_messages, node, config)
 
         assert score == 0.5
         assert len(new_children) == 0
@@ -295,7 +247,7 @@ class TestMCTSAlgorithm:
         path = mcts_algorithm._build_conversation_path(base_messages, grandchild)
 
         assert len(path) == len(base_messages) + 2
-        assert path[:len(base_messages)] == base_messages
+        assert path[: len(base_messages)] == base_messages
         assert path[-2].content == "First response"
         assert path[-2].role == "assistant"
         assert path[-1].content == "Second response"
@@ -310,9 +262,7 @@ class TestMCTSAlgorithm:
         assert path == base_messages
 
     @pytest.mark.asyncio
-    async def test_run_statistics_tracking(
-        self, mcts_algorithm, base_messages, initial_responses, mcts_config
-    ):
+    async def test_run_statistics_tracking(self, mcts_algorithm, base_messages, initial_responses, mcts_config):
         """Test that statistics are properly tracked during run."""
         simulation_data = {"simulation": [], "user_reactions": []}
         score_data = {"general_metrics": {}, "overall_score": 0.5}
@@ -321,9 +271,7 @@ class TestMCTSAlgorithm:
         mcts_algorithm.scorer.score_simulation = AsyncMock(return_value=score_data)
         mcts_algorithm.response_generator.generate_expansion_response = AsyncMock(return_value=None)
 
-        root_nodes, stats = await mcts_algorithm.run(
-            base_messages, initial_responses, mcts_config
-        )
+        root_nodes, stats = await mcts_algorithm.run(base_messages, initial_responses, mcts_config)
 
         assert "total_iterations" in stats
         assert "nodes_created" in stats
@@ -339,9 +287,7 @@ class TestMCTSAlgorithm:
         assert stats["average_depth_explored"] >= 0
 
     @pytest.mark.asyncio
-    async def test_run_parallel_processing(
-        self, mcts_algorithm, base_messages, initial_responses, mcts_config
-    ):
+    async def test_run_parallel_processing(self, mcts_algorithm, base_messages, initial_responses, mcts_config):
         """Test that nodes are processed in parallel."""
         max_concurrent_calls = []
         current_concurrent_calls = 0
@@ -363,14 +309,12 @@ class TestMCTSAlgorithm:
         await mcts_algorithm.run(base_messages, initial_responses, mcts_config)
 
         for i in range(0, len(max_concurrent_calls), 3):
-            iteration_calls = max_concurrent_calls[i:i+3]
+            iteration_calls = max_concurrent_calls[i : i + 3]
             if len(iteration_calls) == 3:
                 assert max(iteration_calls) == 3  # Parallel execution
 
     @pytest.mark.asyncio
-    async def test_run_empty_initial_responses(
-        self, mcts_algorithm, base_messages, mcts_config
-    ):
+    async def test_run_empty_initial_responses(self, mcts_algorithm, base_messages, mcts_config):
         """Test handling of empty initial responses."""
         root_nodes, stats = await mcts_algorithm.run(base_messages, [], mcts_config)
 

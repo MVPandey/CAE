@@ -13,40 +13,21 @@ from app.schema.user import User
 @pytest.fixture
 def mock_user():
     """Create a mock user object."""
-    return User(
-        id=uuid4(),
-        name="Test User",
-        created_at="2024-01-01T00:00:00"
-    )
+    return User(id=uuid4(), name="Test User", created_at="2024-01-01T00:00:00")
 
 
 @pytest.fixture
 def mock_users(mock_user):
     """Create a list of mock users."""
-    return [
-        mock_user,
-        User(
-            id=uuid4(),
-            name="Another User",
-            created_at="2024-01-02T00:00:00"
-        )
-    ]
+    return [mock_user, User(id=uuid4(), name="Another User", created_at="2024-01-02T00:00:00")]
 
 
 @pytest.fixture
 def mock_chats():
     """Create a list of mock chats."""
     return [
-        Chat(
-            id=uuid4(),
-            user_id=uuid4(),
-            created_at="2024-01-01T00:00:00"
-        ),
-        Chat(
-            id=uuid4(),
-            user_id=uuid4(),
-            created_at="2024-01-02T00:00:00"
-        )
+        Chat(id=uuid4(), user_id=uuid4(), created_at="2024-01-01T00:00:00"),
+        Chat(id=uuid4(), user_id=uuid4(), created_at="2024-01-02T00:00:00"),
     ]
 
 
@@ -59,10 +40,7 @@ class TestCreateUser:
         with patch("app.api.user.db.create_user", new_callable=AsyncMock) as mock_create:
             mock_create.return_value = mock_user
 
-            response = await async_client.post(
-                "/users/",
-                json={"name": "Test User"}
-            )
+            response = await async_client.post("/users/", json={"name": "Test User"})
 
             assert response.status_code == status.HTTP_201_CREATED
             data = response.json()
@@ -74,20 +52,14 @@ class TestCreateUser:
     @pytest.mark.asyncio
     async def test_create_user_empty_name(self, async_client):
         """Test user creation with empty name."""
-        response = await async_client.post(
-            "/users/",
-            json={"name": ""}
-        )
+        response = await async_client.post("/users/", json={"name": ""})
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     @pytest.mark.asyncio
     async def test_create_user_missing_name(self, async_client):
         """Test user creation without name field."""
-        response = await async_client.post(
-            "/users/",
-            json={}
-        )
+        response = await async_client.post("/users/", json={})
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
@@ -96,7 +68,7 @@ class TestCreateUser:
         """Test user creation with name exceeding max length."""
         response = await async_client.post(
             "/users/",
-            json={"name": "a" * 256}  # Exceeds max_length=255
+            json={"name": "a" * 256},  # Exceeds max_length=255
         )
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -107,10 +79,7 @@ class TestCreateUser:
         with patch("app.api.user.db.create_user", new_callable=AsyncMock) as mock_create:
             mock_create.side_effect = Exception("Database connection failed")
 
-            response = await async_client.post(
-                "/users/",
-                json={"name": "Test User"}
-            )
+            response = await async_client.post("/users/", json={"name": "Test User"})
 
             assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
             assert "Database connection failed" in response.json()["detail"]
@@ -220,7 +189,7 @@ class TestDeleteUser:
             response = await async_client.delete(f"/users/{user_id}")
 
             assert response.status_code == status.HTTP_204_NO_CONTENT
-            assert response.content == b''
+            assert response.content == b""
             mock_delete.assert_called_once_with(user_id)
 
     @pytest.mark.asyncio

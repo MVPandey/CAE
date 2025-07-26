@@ -20,15 +20,15 @@ def mock_chat_messages():
             chat_id=uuid4(),
             role=ChatRole.USER,
             content="Hello, how are you?",
-            created_at="2024-01-01T00:00:00"
+            created_at="2024-01-01T00:00:00",
         ),
         ChatMessage(
             id=uuid4(),
             chat_id=uuid4(),
             role=ChatRole.ASSISTANT,
             content="I'm doing well, thank you! How can I help you today?",
-            created_at="2024-01-01T00:00:01"
-        )
+            created_at="2024-01-01T00:00:01",
+        ),
     ]
 
 
@@ -45,11 +45,7 @@ class TestChatEndpoints:
 
         try:
             response = await async_client.post(
-                "/chats/",
-                json={
-                    "user_id": str(uuid4()),
-                    "message": "Hello, how are you?"
-                }
+                "/chats/", json={"user_id": str(uuid4()), "message": "Hello, how are you?"}
             )
 
             assert response.status_code == status.HTTP_200_OK
@@ -80,12 +76,7 @@ class TestChatEndpoints:
 
         try:
             response = await async_client.post(
-                "/chats/",
-                json={
-                    "user_id": user_id,
-                    "message": "What's the weather like?",
-                    "chat_id": chat_id
-                }
+                "/chats/", json={"user_id": user_id, "message": "What's the weather like?", "chat_id": chat_id}
             )
 
             assert response.status_code == status.HTTP_200_OK
@@ -109,13 +100,7 @@ class TestChatEndpoints:
         app.dependency_overrides[ChatService] = lambda: mock_service
 
         try:
-            response = await async_client.post(
-                "/chats/",
-                json={
-                    "user_id": str(uuid4()),
-                    "message": "Hello"
-                }
-            )
+            response = await async_client.post("/chats/", json={"user_id": str(uuid4()), "message": "Hello"})
 
             assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
             assert "LLM API error" in response.json()["detail"]
@@ -125,22 +110,13 @@ class TestChatEndpoints:
     @pytest.mark.asyncio
     async def test_send_message_validation_errors(self, async_client):
         """Test request validation."""
-        response = await async_client.post(
-            "/chats/",
-            json={"message": "Hello"}
-        )
+        response = await async_client.post("/chats/", json={"message": "Hello"})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-        response = await async_client.post(
-            "/chats/",
-            json={"user_id": str(uuid4())}
-        )
+        response = await async_client.post("/chats/", json={"user_id": str(uuid4())})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-        response = await async_client.post(
-            "/chats/",
-            json={}
-        )
+        response = await async_client.post("/chats/", json={})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     @pytest.mark.asyncio
@@ -184,5 +160,5 @@ class TestChatEndpoints:
             response = await async_client.delete(f"/chats/{chat_id}")
 
             assert response.status_code == status.HTTP_204_NO_CONTENT
-            assert response.content == b''
+            assert response.content == b""
             mock_delete.assert_called_once_with(chat_id)

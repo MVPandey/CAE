@@ -21,10 +21,7 @@ class TestToolParameterProperty:
 
     def test_basic_string_property(self):
         """Test creating a basic string property."""
-        prop = ToolParameterProperty(
-            type="string",
-            description="The user's name"
-        )
+        prop = ToolParameterProperty(type="string", description="The user's name")
         assert prop.type == "string"
         assert prop.description == "The user's name"
         assert prop.enum is None
@@ -38,22 +35,14 @@ class TestToolParameterProperty:
     def test_enum_property(self):
         """Test creating an enum property."""
         prop = ToolParameterProperty(
-            type="string",
-            description="Temperature unit",
-            enum=["celsius", "fahrenheit", "kelvin"]
+            type="string", description="Temperature unit", enum=["celsius", "fahrenheit", "kelvin"]
         )
         assert prop.type == "string"
         assert prop.enum == ["celsius", "fahrenheit", "kelvin"]
 
     def test_numeric_property_with_bounds(self):
         """Test creating a numeric property with min/max."""
-        prop = ToolParameterProperty(
-            type="integer",
-            description="Age in years",
-            minimum=0,
-            maximum=150,
-            default=25
-        )
+        prop = ToolParameterProperty(type="integer", description="Age in years", minimum=0, maximum=150, default=25)
         assert prop.type == "integer"
         assert prop.minimum == 0
         assert prop.maximum == 150
@@ -61,11 +50,7 @@ class TestToolParameterProperty:
 
     def test_array_property(self):
         """Test creating an array property."""
-        prop = ToolParameterProperty(
-            type="array",
-            description="List of tags",
-            items={"type": "string", "minLength": 1}
-        )
+        prop = ToolParameterProperty(type="array", description="List of tags", items={"type": "string", "minLength": 1})
         assert prop.type == "array"
         assert prop.items == {"type": "string", "minLength": 1}
 
@@ -77,9 +62,9 @@ class TestToolParameterProperty:
             properties={
                 "street": {"type": "string", "description": "Street address"},
                 "city": {"type": "string", "description": "City name"},
-                "zipcode": {"type": "string", "description": "ZIP code"}
+                "zipcode": {"type": "string", "description": "ZIP code"},
             },
-            required=["street", "city"]
+            required=["street", "city"],
         )
         assert prop.type == "object"
         assert "street" in prop.properties
@@ -92,9 +77,9 @@ class TestToolParameterProperty:
             ToolParameterProperty()
 
         errors = exc_info.value.errors()
-        field_names = {error['loc'][0] for error in errors}
-        assert 'type' in field_names
-        assert 'description' in field_names
+        field_names = {error["loc"][0] for error in errors}
+        assert "type" in field_names
+        assert "description" in field_names
 
 
 class TestToolFunctionParameters:
@@ -104,17 +89,10 @@ class TestToolFunctionParameters:
         """Test creating simple function parameters."""
         params = ToolFunctionParameters(
             properties={
-                "name": ToolParameterProperty(
-                    type="string",
-                    description="Person's name"
-                ),
-                "age": ToolParameterProperty(
-                    type="integer",
-                    description="Person's age",
-                    minimum=0
-                )
+                "name": ToolParameterProperty(type="string", description="Person's name"),
+                "age": ToolParameterProperty(type="integer", description="Person's age", minimum=0),
             },
-            required=["name"]
+            required=["name"],
         )
 
         assert params.type == "object"
@@ -131,9 +109,7 @@ class TestToolFunctionParameters:
 
     def test_parameters_type_must_be_object(self):
         """Test that type is always 'object'."""
-        params = ToolFunctionParameters(
-            properties={"test": ToolParameterProperty(type="string", description="test")}
-        )
+        params = ToolFunctionParameters(properties={"test": ToolParameterProperty(type="string", description="test")})
         assert params.type == "object"
 
 
@@ -144,25 +120,15 @@ class TestToolFunction:
         """Test creating a tool function."""
         params = ToolFunctionParameters(
             properties={
-                "location": ToolParameterProperty(
-                    type="string",
-                    description="The city and country"
-                ),
+                "location": ToolParameterProperty(type="string", description="The city and country"),
                 "unit": ToolParameterProperty(
-                    type="string",
-                    description="Temperature unit",
-                    enum=["celsius", "fahrenheit"],
-                    default="celsius"
-                )
+                    type="string", description="Temperature unit", enum=["celsius", "fahrenheit"], default="celsius"
+                ),
             },
-            required=["location"]
+            required=["location"],
         )
 
-        func = ToolFunction(
-            name="get_weather",
-            description="Get the current weather for a location",
-            parameters=params
-        )
+        func = ToolFunction(name="get_weather", description="Get the current weather for a location", parameters=params)
 
         assert func.name == "get_weather"
         assert func.description == "Get the current weather for a location"
@@ -174,9 +140,9 @@ class TestToolFunction:
             ToolFunction(name="test")
 
         errors = exc_info.value.errors()
-        field_names = {error['loc'][0] for error in errors}
-        assert 'description' in field_names
-        assert 'parameters' in field_names
+        field_names = {error["loc"][0] for error in errors}
+        assert "description" in field_names
+        assert "parameters" in field_names
 
 
 class TestToolSchema:
@@ -185,20 +151,10 @@ class TestToolSchema:
     def test_tool_schema_creation(self):
         """Test creating a complete tool schema."""
         params = ToolFunctionParameters(
-            properties={
-                "query": ToolParameterProperty(
-                    type="string",
-                    description="Search query"
-                )
-            },
-            required=["query"]
+            properties={"query": ToolParameterProperty(type="string", description="Search query")}, required=["query"]
         )
 
-        func = ToolFunction(
-            name="search",
-            description="Search for information",
-            parameters=params
-        )
+        func = ToolFunction(name="search", description="Search for information", parameters=params)
 
         schema = ToolSchema(function=func)
 
@@ -208,11 +164,7 @@ class TestToolSchema:
 
     def test_tool_schema_immutability(self):
         """Test that ToolSchema is immutable (frozen)."""
-        params = ToolFunctionParameters(
-            properties={
-                "test": ToolParameterProperty(type="string", description="test")
-            }
-        )
+        params = ToolFunctionParameters(properties={"test": ToolParameterProperty(type="string", description="test")})
         func = ToolFunction(name="test", description="test", parameters=params)
         schema = ToolSchema(function=func)
 
@@ -224,23 +176,16 @@ class TestToolSchema:
         params = ToolFunctionParameters(
             properties={
                 "location": ToolParameterProperty(
-                    type="string",
-                    description="The city and country, eg. San Francisco, USA"
+                    type="string", description="The city and country, eg. San Francisco, USA"
                 ),
                 "format": ToolParameterProperty(
-                    type="string",
-                    enum=["celsius", "fahrenheit"],
-                    description="The temperature unit to use"
-                )
+                    type="string", enum=["celsius", "fahrenheit"], description="The temperature unit to use"
+                ),
             },
-            required=["location", "format"]
+            required=["location", "format"],
         )
 
-        func = ToolFunction(
-            name="get_current_weather",
-            description="Get the current weather",
-            parameters=params
-        )
+        func = ToolFunction(name="get_current_weather", description="Get the current weather", parameters=params)
 
         schema = ToolSchema(function=func)
 
@@ -262,20 +207,16 @@ class TestAbstractTool:
 
     def test_concrete_tool_implementation(self):
         """Test implementing a concrete tool."""
+
         class WeatherTool(AbstractTool):
             tool_schema = ToolSchema(
                 function=ToolFunction(
                     name="get_weather",
                     description="Get weather information",
                     parameters=ToolFunctionParameters(
-                        properties={
-                            "location": ToolParameterProperty(
-                                type="string",
-                                description="Location"
-                            )
-                        },
-                        required=["location"]
-                    )
+                        properties={"location": ToolParameterProperty(type="string", description="Location")},
+                        required=["location"],
+                    ),
                 )
             )
 
@@ -283,6 +224,7 @@ class TestAbstractTool:
             def tool_function(cls) -> Callable:
                 def get_weather(location: str) -> str:
                     return f"Weather in {location}: Sunny, 72°F"
+
                 return get_weather
 
         assert WeatherTool.tool_schema.function.name == "get_weather"
@@ -294,12 +236,13 @@ class TestAbstractTool:
     def test_concrete_tool_missing_implementation(self):
         """Test that concrete tool must implement tool_function."""
         with pytest.raises(TypeError) as exc_info:
+
             class IncompleteTool(AbstractTool):
                 tool_schema = ToolSchema(
                     function=ToolFunction(
                         name="incomplete",
                         description="Incomplete tool",
-                        parameters=ToolFunctionParameters(properties={})
+                        parameters=ToolFunctionParameters(properties={}),
                     )
                 )
 
@@ -313,25 +256,16 @@ class TestToolCall:
 
     def test_tool_call_function_creation(self):
         """Test creating a ToolCallFunction."""
-        func = ToolCallFunction(
-            name="get_weather",
-            arguments='{"location": "San Francisco", "unit": "fahrenheit"}'
-        )
+        func = ToolCallFunction(name="get_weather", arguments='{"location": "San Francisco", "unit": "fahrenheit"}')
 
         assert func.name == "get_weather"
         assert func.arguments == '{"location": "San Francisco", "unit": "fahrenheit"}'
 
     def test_tool_call_creation(self):
         """Test creating a complete ToolCall."""
-        func = ToolCallFunction(
-            name="search",
-            arguments='{"query": "Python tutorials"}'
-        )
+        func = ToolCallFunction(name="search", arguments='{"query": "Python tutorials"}')
 
-        call = ToolCall(
-            id="call_abc123",
-            function=func
-        )
+        call = ToolCall(id="call_abc123", function=func)
 
         assert call.id == "call_abc123"
         assert call.type == "function"
@@ -340,10 +274,7 @@ class TestToolCall:
 
     def test_tool_call_type_default(self):
         """Test that type defaults to 'function'."""
-        call = ToolCall(
-            id="test_id",
-            function=ToolCallFunction(name="test", arguments="{}")
-        )
+        call = ToolCall(id="test_id", function=ToolCallFunction(name="test", arguments="{}"))
         assert call.type == "function"
 
     def test_tool_call_missing_fields(self):
@@ -352,9 +283,9 @@ class TestToolCall:
             ToolCall()
 
         errors = exc_info.value.errors()
-        field_names = {error['loc'][0] for error in errors}
-        assert 'id' in field_names
-        assert 'function' in field_names
+        field_names = {error["loc"][0] for error in errors}
+        assert "id" in field_names
+        assert "function" in field_names
 
     def test_tool_call_function_missing_fields(self):
         """Test that ToolCallFunction requires all fields."""
@@ -362,4 +293,4 @@ class TestToolCall:
             ToolCallFunction(name="test")
 
         errors = exc_info.value.errors()
-        assert any(error['loc'][0] == 'arguments' for error in errors)
+        assert any(error["loc"][0] == "arguments" for error in errors)

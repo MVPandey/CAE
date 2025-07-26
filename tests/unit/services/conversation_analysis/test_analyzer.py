@@ -1,4 +1,5 @@
 """Unit tests for ConversationAnalyzer."""
+
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -32,13 +33,9 @@ def sample_nodes():
         node.simulated_reactions = [f"User reaction {i}"]
         node.sub_history = [
             {"role": "user", "content": f"User message {i}"},
-            {"role": "assistant", "content": f"Assistant response {i}"}
+            {"role": "assistant", "content": f"Assistant response {i}"},
         ]
-        node.general_metrics = {
-            "clarity": 0.9 - (i * 0.05),
-            "relevance": 0.85 - (i * 0.05),
-            "engagement": 0.8
-        }
+        node.general_metrics = {"clarity": 0.9 - (i * 0.05), "relevance": 0.85 - (i * 0.05), "engagement": 0.8}
         node.goal_metrics = {"success": 0.85 - (i * 0.1)}
 
         for j in range(2):
@@ -55,7 +52,7 @@ def sample_messages():
     """Create sample conversation messages."""
     return [
         Message(role="user", content="I need help with Python"),
-        Message(role="assistant", content="I'd be happy to help you with Python")
+        Message(role="assistant", content="I'd be happy to help you with Python"),
     ]
 
 
@@ -63,9 +60,7 @@ class TestConversationAnalyzer:
     """Test cases for ConversationAnalyzer."""
 
     @pytest.mark.asyncio
-    async def test_analyze_best_path_success(
-        self, analyzer, sample_nodes, sample_messages, mock_llm_service
-    ):
+    async def test_analyze_best_path_success(self, analyzer, sample_nodes, sample_messages, mock_llm_service):
         """Test successful best path analysis."""
         goal = "Help user learn Python"
         max_tokens = 100
@@ -87,9 +82,7 @@ class TestConversationAnalyzer:
         assert call_args.kwargs["max_tokens"] == max_tokens * 2  # TOKEN_MULTIPLIER_ANALYSIS
 
     @pytest.mark.asyncio
-    async def test_analyze_best_path_llm_error(
-        self, analyzer, sample_nodes, sample_messages, mock_llm_service
-    ):
+    async def test_analyze_best_path_llm_error(self, analyzer, sample_nodes, sample_messages, mock_llm_service):
         """Test best path analysis when LLM fails."""
         goal = "Help user"
         max_tokens = 100
@@ -143,11 +136,7 @@ class TestConversationAnalyzer:
 
     def test_select_best_node_zero_visits(self, analyzer):
         """Test best node selection when all nodes have zero visits."""
-        nodes = [
-            MCTSNode("Response 1"),
-            MCTSNode("Response 2"),
-            MCTSNode("Response 3")
-        ]
+        nodes = [MCTSNode("Response 1"), MCTSNode("Response 2"), MCTSNode("Response 3")]
 
         for i, node in enumerate(nodes):
             node.avg_score = 0.9 - (i * 0.1)
@@ -221,9 +210,7 @@ class TestConversationAnalyzer:
         mock_response = Mock(content="Analysis of best response")
         mock_llm_service.query_llm = AsyncMock(return_value=mock_response)
 
-        best_node, best_idx, analysis = await analyzer.analyze_best_path(
-            nodes, sample_messages, None, 100
-        )
+        best_node, best_idx, analysis = await analyzer.analyze_best_path(nodes, sample_messages, None, 100)
 
         assert best_node == nodes[2]
         assert best_idx == 2
@@ -256,9 +243,7 @@ class TestConversationAnalyzer:
         assert best_node == nodes[0]
 
     @pytest.mark.asyncio
-    async def test_analyze_best_path_message_ordering(
-        self, analyzer, sample_nodes, sample_messages, mock_llm_service
-    ):
+    async def test_analyze_best_path_message_ordering(self, analyzer, sample_nodes, sample_messages, mock_llm_service):
         """Test that messages are passed to LLM in correct order."""
         mock_response = Mock(content="Analysis")
         mock_llm_service.query_llm = AsyncMock(return_value=mock_response)

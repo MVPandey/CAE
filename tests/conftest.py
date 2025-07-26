@@ -55,10 +55,12 @@ def mock_retry_delays(request):
         yield
         return
 
-    with patch("app.utils.constants.RETRY_MIN_WAIT", 0.001), \
-         patch("app.utils.constants.RETRY_MAX_WAIT", 0.01), \
-         patch("app.utils.constants.RETRY_MULTIPLIER", 0.001), \
-         patch("app.utils.constants.DEFAULT_LLM_TIMEOUT", 1):
+    with (
+        patch("app.utils.constants.RETRY_MIN_WAIT", 0.001),
+        patch("app.utils.constants.RETRY_MAX_WAIT", 0.01),
+        patch("app.utils.constants.RETRY_MULTIPLIER", 0.001),
+        patch("app.utils.constants.DEFAULT_LLM_TIMEOUT", 1),
+    ):
         yield
 
 
@@ -68,7 +70,7 @@ def mock_tenacity_retry():
     from tenacity import retry as original_retry
 
     def fast_retry(*args, **kwargs):
-        kwargs['wait'] = lambda retry_state: 0.001
+        kwargs["wait"] = lambda retry_state: 0.001
         return original_retry(*args, **kwargs)
 
     with patch("tenacity.retry", side_effect=fast_retry):
@@ -83,6 +85,7 @@ def mock_asyncio_sleep(request):
         return
 
     import asyncio
+
     original_sleep = asyncio.sleep
 
     async def fast_sleep(seconds):

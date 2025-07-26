@@ -1,4 +1,5 @@
 """Unit tests for ConversationScorer."""
+
 import json
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -27,7 +28,7 @@ def sample_messages():
     return [
         Message(role="user", content="I need help with my code"),
         Message(role="assistant", content="I'd be happy to help"),
-        Message(role="user", content="It's not working properly")
+        Message(role="user", content="It's not working properly"),
     ]
 
 
@@ -37,9 +38,9 @@ def sample_simulation_data():
     return {
         "simulation": [
             {"role": "assistant", "content": "Can you show me the error?"},
-            {"role": "user", "content": "Here's the error message..."}
+            {"role": "user", "content": "Here's the error message..."},
         ],
-        "user_reactions": ["User is engaged", "User seems satisfied"]
+        "user_reactions": ["User is engaged", "User seems satisfied"],
     }
 
 
@@ -47,9 +48,7 @@ class TestConversationScorer:
     """Test cases for ConversationScorer."""
 
     @pytest.mark.asyncio
-    async def test_score_simulation_success(
-        self, scorer, sample_messages, sample_simulation_data, mock_llm_service
-    ):
+    async def test_score_simulation_success(self, scorer, sample_messages, sample_simulation_data, mock_llm_service):
         """Test successful simulation scoring."""
         goal = "Help user debug code"
         max_tokens = 100
@@ -61,22 +60,16 @@ class TestConversationScorer:
                 "engagement": 0.80,
                 "authenticity": 0.85,
                 "coherence": 0.88,
-                "respectfulness": 0.95
+                "respectfulness": 0.95,
             },
-            "goal_metrics": {
-                "problem_solving": 0.82,
-                "technical_accuracy": 0.88,
-                "user_satisfaction": 0.85
-            },
+            "goal_metrics": {"problem_solving": 0.82, "technical_accuracy": 0.88, "user_satisfaction": 0.85},
             "overall_score": 0.86,
-            "reasoning": "The conversation effectively addresses the user's debugging needs"
+            "reasoning": "The conversation effectively addresses the user's debugging needs",
         }
 
         mock_llm_service.query_llm = AsyncMock(return_value=expected_scores)
 
-        result = await scorer.score_simulation(
-            sample_messages, sample_simulation_data, goal, max_tokens
-        )
+        result = await scorer.score_simulation(sample_messages, sample_simulation_data, goal, max_tokens)
 
         assert result == expected_scores
         assert result["general_metrics"]["clarity"] == 0.85
@@ -89,23 +82,19 @@ class TestConversationScorer:
         assert call_args.kwargs["max_tokens"] == max_tokens
 
     @pytest.mark.asyncio
-    async def test_score_simulation_no_goal(
-        self, scorer, sample_messages, sample_simulation_data, mock_llm_service
-    ):
+    async def test_score_simulation_no_goal(self, scorer, sample_messages, sample_simulation_data, mock_llm_service):
         """Test simulation scoring without a specific goal."""
         max_tokens = 100
 
         expected_scores = {
             "general_metrics": {metric: 0.8 for metric in ScoringConfig.GENERAL_METRICS},
             "goal_metrics": {},
-            "overall_score": 0.8
+            "overall_score": 0.8,
         }
 
         mock_llm_service.query_llm = AsyncMock(return_value=expected_scores)
 
-        result = await scorer.score_simulation(
-            sample_messages, sample_simulation_data, None, max_tokens
-        )
+        result = await scorer.score_simulation(sample_messages, sample_simulation_data, None, max_tokens)
 
         assert result == expected_scores
         assert result["goal_metrics"] == {}
@@ -125,17 +114,13 @@ class TestConversationScorer:
         mock_llm_service.query_llm = AsyncMock(side_effect=Exception("LLM error"))
 
         with patch("app.services.conversation_analysis.scorer.logger") as mock_logger:
-            result = await scorer.score_simulation(
-                sample_messages, sample_simulation_data, goal, max_tokens
-            )
+            result = await scorer.score_simulation(sample_messages, sample_simulation_data, goal, max_tokens)
 
             assert result == scorer._get_default_scores()
             assert all(score == 0.5 for score in result["general_metrics"].values())
             assert result["overall_score"] == 0.5
 
-            mock_logger.error.assert_called_once_with(
-                "Failed to score simulation", exc_info=True
-            )
+            mock_logger.error.assert_called_once_with("Failed to score simulation", exc_info=True)
 
     def test_build_scoring_prompt_with_goal(self, scorer):
         """Test building scoring prompt with a goal."""
@@ -170,10 +155,10 @@ class TestConversationScorer:
                 "engagement": 0.8,
                 "authenticity": 0.85,
                 "coherence": 0.9,
-                "respectfulness": 0.95
+                "respectfulness": 0.95,
             },
             "goal_metrics": {"success": 0.88},
-            "overall_score": 0.87
+            "overall_score": 0.87,
         }
 
         validated = scorer._validate_scoring_result(result)
@@ -182,10 +167,7 @@ class TestConversationScorer:
 
     def test_validate_scoring_result_missing_general_metrics(self, scorer):
         """Test validation when general_metrics is missing."""
-        result = {
-            "goal_metrics": {"success": 0.8},
-            "overall_score": 0.8
-        }
+        result = {"goal_metrics": {"success": 0.8}, "overall_score": 0.8}
 
         validated = scorer._validate_scoring_result(result)
 
@@ -195,14 +177,7 @@ class TestConversationScorer:
 
     def test_validate_scoring_result_partial_general_metrics(self, scorer):
         """Test validation when some general metrics are missing."""
-        result = {
-            "general_metrics": {
-                "clarity": 0.9,
-                "relevance": 0.85
-            },
-            "goal_metrics": {},
-            "overall_score": 0.87
-        }
+        result = {"general_metrics": {"clarity": 0.9, "relevance": 0.85}, "goal_metrics": {}, "overall_score": 0.87}
 
         validated = scorer._validate_scoring_result(result)
 
@@ -214,10 +189,7 @@ class TestConversationScorer:
 
     def test_validate_scoring_result_missing_goal_metrics(self, scorer):
         """Test validation when goal_metrics is missing."""
-        result = {
-            "general_metrics": {"clarity": 0.9},
-            "overall_score": 0.9
-        }
+        result = {"general_metrics": {"clarity": 0.9}, "overall_score": 0.9}
 
         validated = scorer._validate_scoring_result(result)
 
@@ -226,14 +198,7 @@ class TestConversationScorer:
 
     def test_validate_scoring_result_missing_overall_score(self, scorer):
         """Test validation when overall_score is missing."""
-        result = {
-            "general_metrics": {
-                "clarity": 0.8,
-                "relevance": 0.9,
-                "engagement": 0.7
-            },
-            "goal_metrics": {}
-        }
+        result = {"general_metrics": {"clarity": 0.8, "relevance": 0.9, "engagement": 0.7}, "goal_metrics": {}}
 
         validated = scorer._validate_scoring_result(result)
 
@@ -244,10 +209,7 @@ class TestConversationScorer:
 
     def test_validate_scoring_result_empty_general_metrics(self, scorer):
         """Test validation with empty general_metrics."""
-        result = {
-            "general_metrics": {},
-            "goal_metrics": {}
-        }
+        result = {"general_metrics": {}, "goal_metrics": {}}
 
         validated = scorer._validate_scoring_result(result)
 
@@ -290,40 +252,28 @@ class TestConversationScorer:
         assert all(metric in system_prompt.content for metric in ScoringConfig.GENERAL_METRICS)
 
     @pytest.mark.asyncio
-    async def test_score_simulation_complex_data(
-        self, scorer, sample_messages, mock_llm_service
-    ):
+    async def test_score_simulation_complex_data(self, scorer, sample_messages, mock_llm_service):
         """Test scoring with complex simulation data."""
         complex_simulation_data = {
             "simulation": [
                 {"role": "assistant", "content": "Let me help you step by step"},
                 {"role": "user", "content": "That would be great"},
                 {"role": "assistant", "content": "First, check your imports"},
-                {"role": "user", "content": "I found the issue, thanks!"}
+                {"role": "user", "content": "I found the issue, thanks!"},
             ],
-            "user_reactions": [
-                "User is receptive",
-                "User is engaged",
-                "User is following along",
-                "User is satisfied"
-            ],
-            "metadata": {
-                "duration": 120,
-                "turns": 4
-            }
+            "user_reactions": ["User is receptive", "User is engaged", "User is following along", "User is satisfied"],
+            "metadata": {"duration": 120, "turns": 4},
         }
 
         expected_scores = {
             "general_metrics": {metric: 0.9 for metric in ScoringConfig.GENERAL_METRICS},
             "goal_metrics": {"success": 0.95},
-            "overall_score": 0.91
+            "overall_score": 0.91,
         }
 
         mock_llm_service.query_llm = AsyncMock(return_value=expected_scores)
 
-        result = await scorer.score_simulation(
-            sample_messages, complex_simulation_data, "Help debug", 100
-        )
+        result = await scorer.score_simulation(sample_messages, complex_simulation_data, "Help debug", 100)
 
         assert result == expected_scores
 

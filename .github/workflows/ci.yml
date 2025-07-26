@@ -56,7 +56,7 @@ jobs:
         DB_NAME: test_db
         DB_USER: test
         DB_SECRET: test
-        LOG_LEVEL: DEBUG
+        LOG_LEVEL: INFO
         LLM_TIMEOUT_SECONDS: 600
     
     - name: Upload coverage reports

@@ -38,12 +38,7 @@ class TestLLMClient:
 
     def test_init_custom_values(self):
         """Test LLMClient initialization with custom values."""
-        client = LLMClient(
-            base_url="https://custom.api.com",
-            api_key="custom-key",
-            timeout=30.0,
-            max_retries=5
-        )
+        client = LLMClient(base_url="https://custom.api.com", api_key="custom-key", timeout=30.0, max_retries=5)
 
         assert client.base_url == "https://custom.api.com"
         assert client.api_key == "custom-key"
@@ -68,10 +63,7 @@ class TestLLMClient:
             result = client.get_client()
 
             mock_openai_cls.assert_called_once_with(
-                base_url="https://api.openai.com",
-                api_key="test-key",
-                timeout=60.0,
-                max_retries=DEFAULT_MAX_RETRIES
+                base_url="https://api.openai.com", api_key="test-key", timeout=60.0, max_retries=DEFAULT_MAX_RETRIES
             )
             assert result == mock_openai_instance
 
@@ -229,12 +221,7 @@ class TestLLMClient:
     @patch("app.services.llm.client.logger")
     def test_logging_on_init(self, mock_logger, mock_app_settings):
         """Test that initialization logs debug information."""
-        LLMClient(
-            base_url="https://test.com",
-            api_key="test-key",
-            timeout=30.0,
-            max_retries=3
-        )
+        LLMClient(base_url="https://test.com", api_key="test-key", timeout=30.0, max_retries=3)
 
         mock_logger.debug.assert_called_once()
         call_args = mock_logger.debug.call_args

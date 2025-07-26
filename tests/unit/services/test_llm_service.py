@@ -24,10 +24,11 @@ class TestLLMService:
     @pytest.fixture
     def llm_service(self, mock_app_settings):
         """Create an LLMService instance."""
-        with patch("app.services.llm_service.LLMClient") as mock_client_cls, \
-             patch("app.services.llm_service.ToolExecutor") as mock_executor_cls, \
-             patch("app.services.llm_service.tool_registry") as mock_registry:
-
+        with (
+            patch("app.services.llm_service.LLMClient") as mock_client_cls,
+            patch("app.services.llm_service.ToolExecutor") as mock_executor_cls,
+            patch("app.services.llm_service.tool_registry") as mock_registry,
+        ):
             mock_client = MagicMock()
             mock_client_cls.return_value = mock_client
             mock_client_cls.get_retry_decorator.return_value = lambda func: func
@@ -56,40 +57,33 @@ class TestLLMService:
 
     def test_init_default_values(self, mock_app_settings):
         """Test LLMService initialization with default values."""
-        with patch("app.services.llm_service.LLMClient") as mock_client_cls, \
-             patch("app.services.llm_service.ToolExecutor") as mock_executor_cls, \
-             patch("app.services.llm_service.tool_registry") as mock_registry:
-
+        with (
+            patch("app.services.llm_service.LLMClient") as mock_client_cls,
+            patch("app.services.llm_service.ToolExecutor") as mock_executor_cls,
+            patch("app.services.llm_service.tool_registry") as mock_registry,
+        ):
             mock_registry.list_tool_names.return_value = ["tool1", "tool2"]
 
             service = LLMService()
 
             assert service.model_name == "gpt-4"
-            mock_client_cls.assert_called_once_with(
-                base_url=None,
-                api_key=None,
-                timeout=None
-            )
+            mock_client_cls.assert_called_once_with(base_url=None, api_key=None, timeout=None)
             mock_executor_cls.assert_called_once()
 
     def test_init_custom_values(self):
         """Test LLMService initialization with custom values."""
-        with patch("app.services.llm_service.LLMClient") as mock_client_cls, \
-             patch("app.services.llm_service.ToolExecutor"), \
-             patch("app.services.llm_service.tool_registry"):
-
+        with (
+            patch("app.services.llm_service.LLMClient") as mock_client_cls,
+            patch("app.services.llm_service.ToolExecutor"),
+            patch("app.services.llm_service.tool_registry"),
+        ):
             service = LLMService(
-                base_url="https://api.example.com",
-                api_key="custom-key",
-                model_name="gpt-3.5",
-                timeout=30.0
+                base_url="https://api.example.com", api_key="custom-key", model_name="gpt-3.5", timeout=30.0
             )
 
             assert service.model_name == "gpt-3.5"
             mock_client_cls.assert_called_once_with(
-                base_url="https://api.example.com",
-                api_key="custom-key",
-                timeout=30.0
+                base_url="https://api.example.com", api_key="custom-key", timeout=30.0
             )
 
     @pytest.mark.asyncio
@@ -108,7 +102,7 @@ class TestLLMService:
         messages = [
             Message(role="user", content="Hello"),
             Message(role="assistant", content="Hi"),
-            Message(role="user", content="How are you?")
+            Message(role="user", content="How are you?"),
         ]
 
         with patch.object(llm_service, "_make_llm_request", AsyncMock(return_value=mock_completion)):
@@ -133,9 +127,10 @@ class TestLLMService:
         mock_completion.choices[0].message.content = "Not valid JSON"
         message = Message(role="user", content="Give JSON")
 
-        with patch.object(llm_service, "_make_llm_request", AsyncMock(return_value=mock_completion)), \
-             patch("app.services.llm_service.clean_json_response") as mock_clean:
-
+        with (
+            patch.object(llm_service, "_make_llm_request", AsyncMock(return_value=mock_completion)),
+            patch("app.services.llm_service.clean_json_response") as mock_clean,
+        ):
             mock_clean.return_value = {"cleaned": True}
 
             result = await llm_service.query_llm(message, json_response=True)
@@ -148,9 +143,10 @@ class TestLLMService:
         """Test query_llm with tools."""
         message = Message(role="user", content="Use tools")
 
-        with patch.object(llm_service, "_make_llm_request", AsyncMock(return_value=mock_completion)), \
-             patch.object(llm_service, "_prepare_tools") as mock_prepare:
-
+        with (
+            patch.object(llm_service, "_make_llm_request", AsyncMock(return_value=mock_completion)),
+            patch.object(llm_service, "_prepare_tools") as mock_prepare,
+        ):
             mock_prepare.return_value = [{"name": "tool1"}]
 
             await llm_service.query_llm(message, tools=["tool1"])
@@ -165,10 +161,11 @@ class TestLLMService:
 
         message = Message(role="user", content="Use tool")
 
-        with patch.object(llm_service, "_make_llm_request", AsyncMock(return_value=mock_completion)), \
-             patch.object(llm_service, "_handle_tool_workflow", AsyncMock(return_value=mock_completion)), \
-             patch.object(llm_service, "_prepare_tools", return_value=[{"name": "tool1"}]):
-
+        with (
+            patch.object(llm_service, "_make_llm_request", AsyncMock(return_value=mock_completion)),
+            patch.object(llm_service, "_handle_tool_workflow", AsyncMock(return_value=mock_completion)),
+            patch.object(llm_service, "_prepare_tools", return_value=[{"name": "tool1"}]),
+        ):
             result = await llm_service.query_llm(message, tools=["tool1"])
 
         assert result == mock_completion.choices[0].message
@@ -244,13 +241,9 @@ class TestLLMService:
         mock_client.chat.completions.create = AsyncMock(return_value=mock_completion)
         llm_service.client.get_client.return_value = mock_client
 
-        with patch.object(llm_service, 'retry_decorator', lambda f: f):
+        with patch.object(llm_service, "retry_decorator", lambda f: f):
             result = await llm_service._make_llm_request(
-                messages=messages,
-                tools=tools,
-                json_response=True,
-                request_id="test-123",
-                max_tokens=500
+                messages=messages, tools=tools, json_response=True, request_id="test-123", max_tokens=500
             )
 
         assert result == mock_completion
@@ -269,9 +262,7 @@ class TestLLMService:
         initial_completion.choices[0].message.tool_calls = [MagicMock()]
         initial_completion.choices[0].message.model_dump.return_value = {"role": "assistant"}
 
-        tool_results = [
-            ToolMessage(role="tool", tool_call_id="123", name="tool1", content="Result")
-        ]
+        tool_results = [ToolMessage(role="tool", tool_call_id="123", name="tool1", content="Result")]
         llm_service.tool_executor.execute_tool_calls = AsyncMock(return_value=tool_results)
 
         mock_client = MagicMock()
@@ -280,13 +271,13 @@ class TestLLMService:
 
         messages = [Message(role="user", content="Test")]
 
-        with patch.object(llm_service, 'retry_decorator', lambda f: f):
+        with patch.object(llm_service, "retry_decorator", lambda f: f):
             result = await llm_service._handle_tool_workflow(
                 initial_completion=initial_completion,
                 messages=messages,
                 json_response=False,
                 request_id="test-123",
-                max_tokens=500
+                max_tokens=500,
             )
 
         assert result == mock_completion
@@ -319,9 +310,7 @@ class TestLLMService:
     async def test_handle_tool_calls_backward_compatibility(self, llm_service):
         """Test handle_tool_calls method for backward compatibility."""
         tool_calls = [MagicMock(spec=ToolCall)]
-        expected_results = [
-            ToolMessage(role="tool", tool_call_id="123", name="tool1", content="Result")
-        ]
+        expected_results = [ToolMessage(role="tool", tool_call_id="123", name="tool1", content="Result")]
 
         llm_service.tool_executor.execute_tool_calls = AsyncMock(return_value=expected_results)
 
@@ -339,13 +328,9 @@ class TestLLMService:
         mock_client.chat.completions.create = AsyncMock(return_value=mock_completion)
         llm_service.client.get_client.return_value = mock_client
 
-        with patch.object(llm_service, 'retry_decorator', lambda f: f):
+        with patch.object(llm_service, "retry_decorator", lambda f: f):
             await llm_service.query_llm(
-                message,
-                temperature=0.7,
-                top_p=0.9,
-                frequency_penalty=0.5,
-                presence_penalty=0.3
+                message, temperature=0.7, top_p=0.9, frequency_penalty=0.5, presence_penalty=0.3
             )
 
         call_args = mock_client.chat.completions.create.call_args[1]

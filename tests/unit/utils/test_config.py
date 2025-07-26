@@ -27,7 +27,7 @@ class TestConfig:
             "DB_USER": "testuser",
             "DB_SECRET": "testpass",
             "LOG_LEVEL": "DEBUG",
-            "LLM_TIMEOUT_SECONDS": "300"
+            "LLM_TIMEOUT_SECONDS": "300",
         }
         for key, value in env_vars.items():
             monkeypatch.setenv(key, value)
@@ -64,7 +64,7 @@ class TestConfig:
             "DB_PORT": "5432",
             "DB_NAME": "db",
             "DB_USER": "user",
-            "DB_SECRET": "secret"
+            "DB_SECRET": "secret",
         }
         for key, value in env_vars.items():
             monkeypatch.setenv(key, value)
@@ -119,9 +119,17 @@ class TestConfig:
         errors = exc_info.value.errors()
         error_fields = {error["loc"][0] for error in errors}
         expected_fields = {
-            "LLM_API_KEY", "LLM_API_BASE_URL", "LLM_MODEL_NAME",
-            "EMBEDDING_MODEL_API_KEY", "EMBEDDING_MODEL_BASE_URL", "EMBEDDING_MODEL_NAME",
-            "DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_SECRET"
+            "LLM_API_KEY",
+            "LLM_API_BASE_URL",
+            "LLM_MODEL_NAME",
+            "EMBEDDING_MODEL_API_KEY",
+            "EMBEDDING_MODEL_BASE_URL",
+            "EMBEDDING_MODEL_NAME",
+            "DB_HOST",
+            "DB_PORT",
+            "DB_NAME",
+            "DB_USER",
+            "DB_SECRET",
         }
         assert expected_fields.issubset(error_fields)
 
@@ -138,7 +146,7 @@ class TestConfig:
             "DB_PORT": "not-a-number",  # Invalid
             "DB_NAME": "db",
             "DB_USER": "user",
-            "DB_SECRET": "secret"
+            "DB_SECRET": "secret",
         }
         for key, value in env_vars.items():
             monkeypatch.setenv(key, value)
@@ -170,9 +178,20 @@ LOG_LEVEL=WARNING
 
         monkeypatch.chdir(tmp_path)
 
-        for key in ["LLM_API_KEY", "LLM_API_BASE_URL", "LLM_MODEL_NAME",
-                   "EMBEDDING_MODEL_API_KEY", "EMBEDDING_MODEL_BASE_URL", "EMBEDDING_MODEL_NAME",
-                   "DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_SECRET", "LOG_LEVEL"]:
+        for key in [
+            "LLM_API_KEY",
+            "LLM_API_BASE_URL",
+            "LLM_MODEL_NAME",
+            "EMBEDDING_MODEL_API_KEY",
+            "EMBEDDING_MODEL_BASE_URL",
+            "EMBEDDING_MODEL_NAME",
+            "DB_HOST",
+            "DB_PORT",
+            "DB_NAME",
+            "DB_USER",
+            "DB_SECRET",
+            "LOG_LEVEL",
+        ]:
             monkeypatch.delenv(key, raising=False)
 
         config = Config()

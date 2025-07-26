@@ -21,6 +21,7 @@ class TestDatabaseInitialization:
 
         with patch("app.utils.config.app_settings", mock_settings):
             import importlib
+
             importlib.reload(chat)
 
             expected_url = "postgresql+asyncpg://testuser:testpass@localhost:5432/testdb"
@@ -56,6 +57,7 @@ class TestDatabaseInitialization:
 
         with patch("app.utils.config.app_settings", mock_settings):
             import importlib
+
             importlib.reload(chat)
 
             expected_url = "postgresql+asyncpg://user@domain:pass@word#123@db.example.com:5433/my-database"

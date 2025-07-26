@@ -82,9 +82,11 @@ async def test_mcp_server_tool_registration():
 @pytest.mark.asyncio
 async def test_analyze_conversation_basic(mock_services):
     """Test basic conversation analysis functionality."""
+
     async def fast_initialize_services():
         """Fast initialization without retry."""
         import servers.mcp.mcts_analysis_server as mcts_server
+
         mcts_server._services_initialized = True
         mcts_server.llm_service = mock_services["llm_service"]
         mcts_server.response_generator = mock_services["response_generator"]
@@ -95,6 +97,7 @@ async def test_analyze_conversation_basic(mock_services):
 
     with patch("servers.mcp.mcts_analysis_server.initialize_services", side_effect=fast_initialize_services):
         from servers.mcp.mcts_analysis_server import initialize_services
+
         await initialize_services()
 
     async with Client(mcp) as client:
@@ -123,9 +126,11 @@ async def test_analyze_conversation_basic(mock_services):
 @pytest.mark.asyncio
 async def test_analyze_conversation_with_custom_params(mock_services):
     """Test conversation analysis with custom parameters."""
+
     async def fast_initialize_services():
         """Fast initialization without retry."""
         import servers.mcp.mcts_analysis_server as mcts_server
+
         mcts_server._services_initialized = True
         mcts_server.llm_service = mock_services["llm_service"]
         mcts_server.response_generator = mock_services["response_generator"]
@@ -136,6 +141,7 @@ async def test_analyze_conversation_with_custom_params(mock_services):
 
     with patch("servers.mcp.mcts_analysis_server.initialize_services", side_effect=fast_initialize_services):
         from servers.mcp.mcts_analysis_server import initialize_services
+
         await initialize_services()
 
     async with Client(mcp) as client:
@@ -176,11 +182,13 @@ async def test_analyze_conversation_error_handling():
         async def fast_initialize_services():
             """Fast initialization without retry."""
             import servers.mcp.mcts_analysis_server as mcts_server
+
             mcts_server._services_initialized = True
             mcts_server.response_generator = mock_gen
 
         with patch("servers.mcp.mcts_analysis_server.initialize_services", side_effect=fast_initialize_services):
             from servers.mcp.mcts_analysis_server import initialize_services
+
             await initialize_services()
 
         async with Client(mcp) as client:

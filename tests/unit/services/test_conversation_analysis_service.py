@@ -1,4 +1,5 @@
 """Unit tests for ConversationAnalysisService."""
+
 import time
 from unittest.mock import AsyncMock, Mock, patch
 from uuid import uuid4
@@ -18,20 +19,21 @@ from app.utils.exceptions import ChatHistoryNotFoundError
 @pytest.fixture
 def mock_dependencies():
     """Create mocked dependencies for ConversationAnalysisService."""
-    with patch("app.services.conversation_analysis_service.LLMService") as mock_llm_service, \
-         patch("app.services.conversation_analysis_service.ResponseGenerator") as mock_response_gen, \
-         patch("app.services.conversation_analysis_service.ConversationSimulator") as mock_simulator, \
-         patch("app.services.conversation_analysis_service.ConversationScorer") as mock_scorer, \
-         patch("app.services.conversation_analysis_service.ConversationAnalyzer") as mock_analyzer, \
-         patch("app.services.conversation_analysis_service.MCTSAlgorithm") as mock_mcts:
-
+    with (
+        patch("app.services.conversation_analysis_service.LLMService") as mock_llm_service,
+        patch("app.services.conversation_analysis_service.ResponseGenerator") as mock_response_gen,
+        patch("app.services.conversation_analysis_service.ConversationSimulator") as mock_simulator,
+        patch("app.services.conversation_analysis_service.ConversationScorer") as mock_scorer,
+        patch("app.services.conversation_analysis_service.ConversationAnalyzer") as mock_analyzer,
+        patch("app.services.conversation_analysis_service.MCTSAlgorithm") as mock_mcts,
+    ):
         yield {
             "llm_service": mock_llm_service,
             "response_generator": mock_response_gen,
             "simulator": mock_simulator,
             "scorer": mock_scorer,
             "analyzer": mock_analyzer,
-            "mcts": mock_mcts
+            "mcts": mock_mcts,
         }
 
 
@@ -51,7 +53,7 @@ def sample_request():
         mcts_iterations=10,
         simulation_depth=5,
         exploration_constant=1.414,
-        max_tokens=100
+        max_tokens=100,
     )
 
 
@@ -61,7 +63,7 @@ def sample_chat_history():
     return [
         Mock(role=Mock(value="user"), content="I'm having trouble with my Python code"),
         Mock(role=Mock(value="assistant"), content="I'd be happy to help. What's the issue?"),
-        Mock(role=Mock(value="user"), content="It's throwing a KeyError")
+        Mock(role=Mock(value="user"), content="It's throwing a KeyError"),
     ]
 
 
@@ -76,7 +78,7 @@ def sample_mcts_nodes():
         node.simulated_reactions = ["User seems satisfied", "User is engaged"]
         node.sub_history = [
             {"role": "user", "content": "That makes sense"},
-            {"role": "assistant", "content": "Great! Let me explain further"}
+            {"role": "assistant", "content": "Great! Let me explain further"},
         ]
         node.general_metrics = {"clarity": 0.85, "relevance": 0.9}
         node.goal_metrics = {"problem_solving": 0.8}
@@ -93,15 +95,18 @@ class TestConversationAnalysisService:
     ):
         """Test successful conversation analysis."""
         mock_get_history = AsyncMock(return_value=sample_chat_history)
-        mock_create_analysis = AsyncMock(return_value={
-            "id": str(uuid4()),
-            "chat_id": str(sample_request.chat_id),
-            "created_at": "2024-01-01T00:00:00Z"
-        })
+        mock_create_analysis = AsyncMock(
+            return_value={
+                "id": str(uuid4()),
+                "chat_id": str(sample_request.chat_id),
+                "created_at": "2024-01-01T00:00:00Z",
+            }
+        )
 
-        with patch("app.services.conversation_analysis_service.get_chat_history", mock_get_history), \
-             patch("app.services.conversation_analysis_service.create_conversation_analysis", mock_create_analysis):
-
+        with (
+            patch("app.services.conversation_analysis_service.get_chat_history", mock_get_history),
+            patch("app.services.conversation_analysis_service.create_conversation_analysis", mock_create_analysis),
+        ):
             service.response_generator.generate_initial_branches = AsyncMock(
                 return_value=["Response 1", "Response 2", "Response 3"]
             )
@@ -112,7 +117,7 @@ class TestConversationAnalysisService:
                 "nodes_evaluated": 3 * 10,  # Assuming each node is evaluated in every iteration
                 "pruned_branches": 3,  # Example: one branch pruned per node
                 "parallel_evaluations": 3,  # Example: evaluations performed in parallel for each node
-                "average_depth_explored": 10 / 3  # Example: average depth based on iterations and nodes
+                "average_depth_explored": 10 / 3,  # Example: average depth based on iterations and nodes
             }
             service.mcts.run = AsyncMock(return_value=(sample_mcts_nodes, mcts_stats))
 
@@ -192,7 +197,7 @@ class TestConversationAnalysisService:
             sub_history=[{"role": "user", "content": "Test"}],
             general_metrics={"clarity": 0.9},
             goal_metrics={"success": 0.8},
-            visits=10
+            visits=10,
         )
 
         result = service._branch_to_dict(branch)
@@ -211,23 +216,24 @@ class TestConversationAnalysisService:
     ):
         """Test that appropriate logging occurs during conversation analysis."""
         mock_get_history = AsyncMock(return_value=sample_chat_history)
-        mock_create_analysis = AsyncMock(return_value={
-            "id": str(uuid4()),
-            "chat_id": str(sample_request.chat_id),
-            "created_at": "2024-01-01T00:00:00Z"
-        })
+        mock_create_analysis = AsyncMock(
+            return_value={
+                "id": str(uuid4()),
+                "chat_id": str(sample_request.chat_id),
+                "created_at": "2024-01-01T00:00:00Z",
+            }
+        )
 
-        with patch("app.services.conversation_analysis_service.get_chat_history", mock_get_history), \
-             patch("app.services.conversation_analysis_service.create_conversation_analysis", mock_create_analysis), \
-             patch("app.services.conversation_analysis_service.logger") as mock_logger:
-
+        with (
+            patch("app.services.conversation_analysis_service.get_chat_history", mock_get_history),
+            patch("app.services.conversation_analysis_service.create_conversation_analysis", mock_create_analysis),
+            patch("app.services.conversation_analysis_service.logger") as mock_logger,
+        ):
             service.response_generator.generate_initial_branches = AsyncMock(
                 return_value=["Response 1", "Response 2", "Response 3"]
             )
             service.mcts.run = AsyncMock(return_value=(sample_mcts_nodes, {}))
-            service.analyzer.analyze_best_path = AsyncMock(
-                return_value=(sample_mcts_nodes[0], 0, "Analysis")
-            )
+            service.analyzer.analyze_best_path = AsyncMock(return_value=(sample_mcts_nodes[0], 0, "Analysis"))
             service.analyzer.convert_to_branches = Mock(return_value=[])
 
             await service.analyze_conversation(sample_request)
@@ -261,22 +267,23 @@ class TestConversationAnalysisService:
     ):
         """Test that conversation analysis completes in reasonable time."""
         mock_get_history = AsyncMock(return_value=sample_chat_history)
-        mock_create_analysis = AsyncMock(return_value={
-            "id": str(uuid4()),
-            "chat_id": str(sample_request.chat_id),
-            "created_at": "2024-01-01T00:00:00Z"
-        })
+        mock_create_analysis = AsyncMock(
+            return_value={
+                "id": str(uuid4()),
+                "chat_id": str(sample_request.chat_id),
+                "created_at": "2024-01-01T00:00:00Z",
+            }
+        )
 
-        with patch("app.services.conversation_analysis_service.get_chat_history", mock_get_history), \
-             patch("app.services.conversation_analysis_service.create_conversation_analysis", mock_create_analysis):
-
+        with (
+            patch("app.services.conversation_analysis_service.get_chat_history", mock_get_history),
+            patch("app.services.conversation_analysis_service.create_conversation_analysis", mock_create_analysis),
+        ):
             service.response_generator.generate_initial_branches = AsyncMock(
                 return_value=["Response 1", "Response 2", "Response 3"]
             )
             service.mcts.run = AsyncMock(return_value=(sample_mcts_nodes, {}))
-            service.analyzer.analyze_best_path = AsyncMock(
-                return_value=(sample_mcts_nodes[0], 0, "Analysis")
-            )
+            service.analyzer.analyze_best_path = AsyncMock(return_value=(sample_mcts_nodes[0], 0, "Analysis"))
             service.analyzer.convert_to_branches = Mock(return_value=[])
 
             start_time = time.time()

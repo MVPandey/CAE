@@ -1,4 +1,5 @@
 """Unit tests for ResponseGenerator."""
+
 import json
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -26,7 +27,7 @@ def sample_messages():
     """Create sample conversation messages."""
     return [
         Message(role="user", content="Hello, I need help"),
-        Message(role="assistant", content="I'm here to help you")
+        Message(role="assistant", content="I'm here to help you"),
     ]
 
 
@@ -34,9 +35,7 @@ class TestResponseGenerator:
     """Test cases for ResponseGenerator."""
 
     @pytest.mark.asyncio
-    async def test_generate_initial_branches_success(
-        self, response_generator, sample_messages, mock_llm_service
-    ):
+    async def test_generate_initial_branches_success(self, response_generator, sample_messages, mock_llm_service):
         """Test successful generation of initial response branches."""
         num_branches = 3
         goal = "Help user with their problem"
@@ -45,13 +44,11 @@ class TestResponseGenerator:
         expected_responses = [
             "I understand you need help. Can you provide more details?",
             "Let me assist you with that. What specific issue are you facing?",
-            "I'm here to help. Could you elaborate on what you need?"
+            "I'm here to help. Could you elaborate on what you need?",
         ]
         mock_llm_service.query_llm = AsyncMock(return_value={"responses": expected_responses})
 
-        responses = await response_generator.generate_initial_branches(
-            sample_messages, num_branches, goal, max_tokens
-        )
+        responses = await response_generator.generate_initial_branches(sample_messages, num_branches, goal, max_tokens)
 
         assert responses == expected_responses
         assert len(responses) == num_branches
@@ -62,9 +59,7 @@ class TestResponseGenerator:
         assert call_args.kwargs["max_tokens"] == max_tokens * ResponseConfig.TOKEN_MULTIPLIER_INITIAL
 
     @pytest.mark.asyncio
-    async def test_generate_initial_branches_no_goal(
-        self, response_generator, sample_messages, mock_llm_service
-    ):
+    async def test_generate_initial_branches_no_goal(self, response_generator, sample_messages, mock_llm_service):
         """Test initial branches generation without a goal."""
         num_branches = 2
         max_tokens = 100
@@ -72,9 +67,7 @@ class TestResponseGenerator:
         expected_responses = ["Response 1", "Response 2"]
         mock_llm_service.query_llm = AsyncMock(return_value={"responses": expected_responses})
 
-        responses = await response_generator.generate_initial_branches(
-            sample_messages, num_branches, None, max_tokens
-        )
+        responses = await response_generator.generate_initial_branches(sample_messages, num_branches, None, max_tokens)
 
         assert responses == expected_responses
 
@@ -121,9 +114,7 @@ class TestResponseGenerator:
             mock_logger.error.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_generate_initial_branches_llm_exception(
-        self, response_generator, sample_messages, mock_llm_service
-    ):
+    async def test_generate_initial_branches_llm_exception(self, response_generator, sample_messages, mock_llm_service):
         """Test handling of LLM exceptions."""
         num_branches = 3
         max_tokens = 100
@@ -136,14 +127,10 @@ class TestResponseGenerator:
             )
 
             assert responses == ResponseConfig.DEFAULT_RESPONSES[:num_branches]
-            mock_logger.error.assert_called_once_with(
-                "Failed to generate initial branches", exc_info=True
-            )
+            mock_logger.error.assert_called_once_with("Failed to generate initial branches", exc_info=True)
 
     @pytest.mark.asyncio
-    async def test_generate_expansion_response_success(
-        self, response_generator, sample_messages, mock_llm_service
-    ):
+    async def test_generate_expansion_response_success(self, response_generator, sample_messages, mock_llm_service):
         """Test successful generation of expansion response."""
         existing_responses = ["Response 1", "Response 2"]
         goal = "Help user solve problem"
@@ -164,9 +151,7 @@ class TestResponseGenerator:
         assert call_args.kwargs["max_tokens"] == max_tokens
 
     @pytest.mark.asyncio
-    async def test_generate_expansion_response_no_goal(
-        self, response_generator, sample_messages, mock_llm_service
-    ):
+    async def test_generate_expansion_response_no_goal(self, response_generator, sample_messages, mock_llm_service):
         """Test expansion response generation without a goal."""
         existing_responses = ["Response 1"]
         max_tokens = 100
@@ -203,9 +188,7 @@ class TestResponseGenerator:
             mock_logger.error.assert_called_once_with("Invalid expansion response format")
 
     @pytest.mark.asyncio
-    async def test_generate_expansion_response_exception(
-        self, response_generator, sample_messages, mock_llm_service
-    ):
+    async def test_generate_expansion_response_exception(self, response_generator, sample_messages, mock_llm_service):
         """Test handling of exceptions during expansion generation."""
         existing_responses = ["Response 1"]
         max_tokens = 100
@@ -218,9 +201,7 @@ class TestResponseGenerator:
             )
 
             assert response is None
-            mock_logger.error.assert_called_once_with(
-                "Failed to generate expansion response", exc_info=True
-            )
+            mock_logger.error.assert_called_once_with("Failed to generate expansion response", exc_info=True)
 
     def test_build_initial_branches_prompt_with_goal(self, response_generator):
         """Test building initial branches prompt with a goal."""
@@ -272,9 +253,7 @@ class TestResponseGenerator:
         assert json.dumps(existing) in prompt.content
 
     @pytest.mark.asyncio
-    async def test_generate_initial_branches_prompt_format(
-        self, response_generator, sample_messages, mock_llm_service
-    ):
+    async def test_generate_initial_branches_prompt_format(self, response_generator, sample_messages, mock_llm_service):
         """Test that the prompt format is correct for initial branches."""
         num_branches = 3
         goal = "Test goal"
@@ -282,9 +261,7 @@ class TestResponseGenerator:
 
         mock_llm_service.query_llm = AsyncMock(return_value={"responses": ["R1", "R2", "R3"]})
 
-        await response_generator.generate_initial_branches(
-            sample_messages, num_branches, goal, max_tokens
-        )
+        await response_generator.generate_initial_branches(sample_messages, num_branches, goal, max_tokens)
 
         messages = mock_llm_service.query_llm.call_args.kwargs["messages"]
         assert len(messages) == len(sample_messages) + 1  # System prompt + conversation
@@ -301,18 +278,14 @@ class TestResponseGenerator:
 
         mock_llm_service.query_llm = AsyncMock(return_value={"response": "New response"})
 
-        await response_generator.generate_expansion_response(
-            sample_messages, existing, None, max_tokens
-        )
+        await response_generator.generate_expansion_response(sample_messages, existing, None, max_tokens)
 
         messages = mock_llm_service.query_llm.call_args.kwargs["messages"]
         assert messages[0].role == "system"
         assert json.dumps(existing) in messages[0].content
 
     @pytest.mark.asyncio
-    async def test_generate_initial_branches_with_empty_messages(
-        self, response_generator, mock_llm_service
-    ):
+    async def test_generate_initial_branches_with_empty_messages(self, response_generator, mock_llm_service):
         """Test initial branches generation with empty message history."""
         empty_messages = []
         num_branches = 2
@@ -321,8 +294,6 @@ class TestResponseGenerator:
         expected_responses = ["Response 1", "Response 2"]
         mock_llm_service.query_llm = AsyncMock(return_value={"responses": expected_responses})
 
-        responses = await response_generator.generate_initial_branches(
-            empty_messages, num_branches, None, max_tokens
-        )
+        responses = await response_generator.generate_initial_branches(empty_messages, num_branches, None, max_tokens)
 
         assert responses == expected_responses

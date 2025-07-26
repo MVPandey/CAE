@@ -74,7 +74,7 @@ class ToolSchema(BaseModel):
                     },
                 },
             }
-        }
+        },
     )
 
 

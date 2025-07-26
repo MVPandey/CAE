@@ -28,13 +28,13 @@ def mock_conversation_branches():
             sub_history=[
                 {"role": "assistant", "content": "I understand how you're feeling..."},
                 {"role": "user", "content": "Yes, I'd like that"},
-                {"role": "assistant", "content": "I'm here to listen..."}
+                {"role": "assistant", "content": "I'm here to listen..."},
             ],
             general_metrics={"empathy": 0.9, "clarity": 0.8, "relevance": 0.85},
             goal_metrics={"emotional_support": 0.9, "comfort": 0.85},
             visits=15,
             parent_index=None,
-            children_indices=[1, 2]
+            children_indices=[1, 2],
         ),
         ConversationBranch(
             response="That sounds challenging. Have you considered trying a different approach?",
@@ -43,14 +43,14 @@ def mock_conversation_branches():
             sub_history=[
                 {"role": "assistant", "content": "That sounds challenging..."},
                 {"role": "user", "content": "What kind of approach?"},
-                {"role": "assistant", "content": "Well, sometimes..."}
+                {"role": "assistant", "content": "Well, sometimes..."},
             ],
             general_metrics={"empathy": 0.7, "clarity": 0.8, "relevance": 0.75},
             goal_metrics={"emotional_support": 0.7, "comfort": 0.75},
             visits=10,
             parent_index=0,
-            children_indices=[]
-        )
+            children_indices=[],
+        ),
     ]
 
 
@@ -67,18 +67,13 @@ def mock_analysis_response(mock_conversation_branches):
         selected_branch_index=0,
         selected_response=mock_conversation_branches[0].response,
         analysis="Branch 0 was selected due to its higher empathy score and better alignment with the emotional support goal.",
-        overall_scores={
-            "avg_score": 0.8,
-            "best_score": 0.85,
-            "worst_score": 0.75,
-            "variance": 0.05
-        },
+        overall_scores={"avg_score": 0.8, "best_score": 0.85, "worst_score": 0.75, "variance": 0.05},
         mcts_statistics={
             "total_iterations": 10,
             "total_simulations": 25,
             "avg_simulation_depth": 2.8,
-            "time_taken_seconds": 5.2
-        }
+            "time_taken_seconds": 5.2,
+        },
     )
 
 
@@ -103,8 +98,8 @@ class TestConversationAnalysisEndpoints:
                     "chat_id": str(chat_id),
                     "conversation_goal": "feel better",
                     "num_branches": 5,
-                    "simulation_depth": 3
-                }
+                    "simulation_depth": 3,
+                },
             )
 
             assert response.status_code == status.HTTP_200_OK
@@ -136,10 +131,7 @@ class TestConversationAnalysisEndpoints:
         app.dependency_overrides[ConversationAnalysisService] = lambda: mock_service
 
         try:
-            response = await async_client.post(
-                "/analysis/",
-                json={"chat_id": str(chat_id)}
-            )
+            response = await async_client.post("/analysis/", json={"chat_id": str(chat_id)})
 
             assert response.status_code == status.HTTP_200_OK
             data = response.json()
@@ -163,10 +155,7 @@ class TestConversationAnalysisEndpoints:
         app.dependency_overrides[ConversationAnalysisService] = lambda: mock_service
 
         try:
-            response = await async_client.post(
-                "/analysis/",
-                json={"chat_id": str(uuid4())}
-            )
+            response = await async_client.post("/analysis/", json={"chat_id": str(uuid4())})
 
             assert response.status_code == status.HTTP_400_BAD_REQUEST
             assert "Chat not found" in response.json()["detail"]
@@ -182,10 +171,7 @@ class TestConversationAnalysisEndpoints:
         app.dependency_overrides[ConversationAnalysisService] = lambda: mock_service
 
         try:
-            response = await async_client.post(
-                "/analysis/",
-                json={"chat_id": str(uuid4())}
-            )
+            response = await async_client.post("/analysis/", json={"chat_id": str(uuid4())})
 
             assert response.status_code == status.HTTP_504_GATEWAY_TIMEOUT
             assert "timed out" in response.json()["detail"]
@@ -202,10 +188,7 @@ class TestConversationAnalysisEndpoints:
         app.dependency_overrides[ConversationAnalysisService] = lambda: mock_service
 
         try:
-            response = await async_client.post(
-                "/analysis/",
-                json={"chat_id": str(uuid4())}
-            )
+            response = await async_client.post("/analysis/", json={"chat_id": str(uuid4())})
 
             assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
             assert "Internal server error" in response.json()["detail"]
@@ -216,16 +199,10 @@ class TestConversationAnalysisEndpoints:
     @pytest.mark.asyncio
     async def test_analyze_conversation_validation_errors(self, async_client):
         """Test request validation."""
-        response = await async_client.post(
-            "/analysis/",
-            json={"conversation_goal": "feel better"}
-        )
+        response = await async_client.post("/analysis/", json={"conversation_goal": "feel better"})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-        response = await async_client.post(
-            "/analysis/",
-            json={"chat_id": "not-a-uuid"}
-        )
+        response = await async_client.post("/analysis/", json={"chat_id": "not-a-uuid"})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     @pytest.mark.asyncio

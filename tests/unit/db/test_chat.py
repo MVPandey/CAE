@@ -98,14 +98,10 @@ class TestDatabase:
         db_url = "postgresql+asyncpg://test:test@localhost:5432/testdb"
         db = Database(db_url)
 
-        mock_create_engine.assert_called_once_with(
-            db_url, echo=False, pool_size=20, max_overflow=10
-        )
+        mock_create_engine.assert_called_once_with(db_url, echo=False, pool_size=20, max_overflow=10)
 
         mock_sessionmaker.assert_called_once_with(
-            mock_create_engine.return_value,
-            class_=AsyncSession,
-            expire_on_commit=False
+            mock_create_engine.return_value, class_=AsyncSession, expire_on_commit=False
         )
 
         assert db.engine == mock_create_engine.return_value
@@ -391,11 +387,7 @@ class TestMessageFunctions:
         mock_context.__aexit__.return_value = None
         mock_db.get_session.return_value = mock_context
 
-        message = ChatMessage(
-            chat_id=uuid4(),
-            role=ChatRole.USER,
-            content="Test message"
-        )
+        message = ChatMessage(chat_id=uuid4(), role=ChatRole.USER, content="Test message")
 
         mock_message = Mock(spec=ChatMessageModel)
         mock_message.id = uuid4()
@@ -472,7 +464,7 @@ class TestConversationAnalysisFunctions:
             "selected_response": "Selected response",
             "analysis": "Test analysis",
             "scores": {"score1": 0.8},
-            "mcts_statistics": {"stat1": "value1"}
+            "mcts_statistics": {"stat1": "value1"},
         }
 
         mock_analysis = Mock(spec=ConversationAnalysisModel)

@@ -1,4 +1,5 @@
 """Unit tests for MCTSNode."""
+
 import math
 
 import pytest
@@ -222,20 +223,10 @@ class TestMCTSNode:
         node = MCTSNode("Response")
 
         node.simulated_reactions = ["User is happy", "User understood"]
-        node.sub_history = [
-            {"role": "user", "content": "Thanks!"},
-            {"role": "assistant", "content": "You're welcome!"}
-        ]
+        node.sub_history = [{"role": "user", "content": "Thanks!"}, {"role": "assistant", "content": "You're welcome!"}]
 
-        node.general_metrics = {
-            "clarity": 0.9,
-            "relevance": 0.85,
-            "engagement": 0.8
-        }
-        node.goal_metrics = {
-            "task_completion": 0.95,
-            "user_satisfaction": 0.9
-        }
+        node.general_metrics = {"clarity": 0.9, "relevance": 0.85, "engagement": 0.8}
+        node.goal_metrics = {"task_completion": 0.95, "user_satisfaction": 0.9}
 
         assert len(node.simulated_reactions) == 2
         assert node.simulated_reactions[0] == "User is happy"

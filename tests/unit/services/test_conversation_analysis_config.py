@@ -1,6 +1,5 @@
 """Unit tests for app.services.conversation_analysis.config module."""
 
-
 from app.services.conversation_analysis.config import MCTSConfig, ResponseConfig, ScoringConfig
 
 
@@ -23,6 +22,7 @@ class TestMCTSConfig:
     def test_mcts_config_is_dataclass(self):
         """Test MCTSConfig is a proper dataclass."""
         from dataclasses import is_dataclass
+
         assert is_dataclass(MCTSConfig)
 
     def test_mcts_config_exploration_constant_type(self):
@@ -66,6 +66,7 @@ class TestScoringConfig:
     def test_scoring_config_is_dataclass(self):
         """Test ScoringConfig is a proper dataclass."""
         from dataclasses import is_dataclass
+
         assert is_dataclass(ScoringConfig)
 
     def test_scoring_config_metrics_are_strings(self):
@@ -108,6 +109,7 @@ class TestResponseConfig:
     def test_response_config_is_dataclass(self):
         """Test ResponseConfig is a proper dataclass."""
         from dataclasses import is_dataclass
+
         assert is_dataclass(ResponseConfig)
 
     def test_response_config_responses_are_strings(self):
