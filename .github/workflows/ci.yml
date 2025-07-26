@@ -37,7 +37,7 @@ jobs:
       run: poetry install --no-interaction --no-root
     
     - name: Install project
-      run: poetry install --no-interaction
+      run: poetry install --no-interaction --no-root
     
     - name: Run tests with coverage
       run: |
