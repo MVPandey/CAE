@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import json
-from typing import Any, Optional
+from typing import Any
 
 from ...schema.llm.message import Message
 from ...services.llm_service import LLMService
@@ -17,7 +19,7 @@ class ConversationScorer:
         self,
         messages: list[Message],
         simulation_data: dict[str, Any],
-        goal: Optional[str],
+        goal: str | None,
         max_tokens: int,
     ) -> dict[str, Any]:
         prompt = self._build_scoring_prompt(simulation_data, goal)
@@ -33,7 +35,7 @@ class ConversationScorer:
             logger.error("Failed to score simulation", exc_info=True)
             return self._get_default_scores()
 
-    def _build_scoring_prompt(self, simulation_data: dict[str, Any], goal: Optional[str]) -> Message:
+    def _build_scoring_prompt(self, simulation_data: dict[str, Any], goal: str | None) -> Message:
         goal_section = ""
         if goal:
             goal_section = f"""

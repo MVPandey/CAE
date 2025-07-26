@@ -1,11 +1,12 @@
+from __future__ import annotations
+
 import math
-from typing import Optional
 
 
 class MCTSNode:
     """Node in the Monte Carlo Tree Search tree"""
 
-    def __init__(self, response: str, parent: Optional["MCTSNode"] = None, index: int = 0):
+    def __init__(self, response: str, parent: "MCTSNode" | None = None, index: int = 0):
         self.response = response
         self.parent = parent
         self.children: list[MCTSNode] = []

@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import json
-from typing import Optional
 
 from ...schema.llm.message import Message
 from ...services.llm_service import LLMService
@@ -17,7 +18,7 @@ class ResponseGenerator:
         self,
         messages: list[Message],
         num_branches: int,
-        goal: Optional[str],
+        goal: str | None,
         max_tokens: int,
     ) -> list[str]:
         prompt = self._build_initial_branches_prompt(num_branches, goal)
@@ -43,9 +44,9 @@ class ResponseGenerator:
         self,
         messages: list[Message],
         existing_responses: list[str],
-        goal: Optional[str],
+        goal: str | None,
         max_tokens: int,
-    ) -> Optional[str]:
+    ) -> str | None:
         prompt = self._build_expansion_prompt(existing_responses, goal)
 
         try:
@@ -63,7 +64,7 @@ class ResponseGenerator:
             logger.error("Failed to generate expansion response", exc_info=True)
             return None
 
-    def _build_initial_branches_prompt(self, num_branches: int, goal: Optional[str]) -> Message:
+    def _build_initial_branches_prompt(self, num_branches: int, goal: str | None) -> Message:
         goal_section = f"\n<conversation_goal>\nThe user wants to: {goal}\n</conversation_goal>" if goal else ""
 
         return Message(
@@ -77,7 +78,7 @@ Return JSON:
 }}""",
         )
 
-    def _build_expansion_prompt(self, existing_responses: list[str], goal: Optional[str]) -> Message:
+    def _build_expansion_prompt(self, existing_responses: list[str], goal: str | None) -> Message:
         goal_section = f"<goal>Help achieve: {goal}</goal>\n" if goal else ""
 
         return Message(

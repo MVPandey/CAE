@@ -1,4 +1,6 @@
-from typing import Any, Optional
+from __future__ import annotations
+
+from typing import Any
 
 from ...schema.llm.message import Message
 from ...services.llm_service import LLMService
@@ -13,7 +15,7 @@ class ConversationSimulator:
         self.llm_service = llm_service
 
     async def simulate_conversation(
-        self, messages: list[Message], depth: int, goal: Optional[str], max_tokens: int
+        self, messages: list[Message], depth: int, goal: str | None, max_tokens: int
     ) -> dict[str, Any]:
         prompt = self._build_simulation_prompt(depth, goal)
 
@@ -33,7 +35,7 @@ class ConversationSimulator:
             logger.error("Failed to simulate conversation", exc_info=True)
             return {"simulation": [], "user_reactions": []}
 
-    def _build_simulation_prompt(self, depth: int, goal: Optional[str]) -> Message:
+    def _build_simulation_prompt(self, depth: int, goal: str | None) -> Message:
         goal_section = f"<conversation_goal>{goal}</conversation_goal>\n" if goal else ""
 
         return Message(

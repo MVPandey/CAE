@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -34,7 +36,7 @@ class ChatMessage(BaseModel):
     chat_id: UUID = Field(description="Foreign key to Chat.id")
     role: ChatRole
     content: str
-    tool_calls: Optional[dict[str, Any]] = Field(default=None, description="JSONB field")
-    tool_call_id: Optional[str] = Field(default=None)
+    tool_calls: dict[str, Any] | None = Field(default=None, description="JSONB field")
+    tool_call_id: str | None = Field(default=None)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    embedding: Optional[float] = Field(default=None, description="Vector with 4096 dimensions")
+    embedding: float | None = Field(default=None, description="Vector with 4096 dimensions")

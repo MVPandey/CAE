@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import json
-from typing import Optional
 
 from ...schema.conversation_analysis import ConversationBranch
 from ...schema.llm.message import Message
@@ -19,7 +20,7 @@ class ConversationAnalyzer:
         self,
         root_nodes: list[MCTSNode],
         original_messages: list[Message],
-        goal: Optional[str],
+        goal: str | None,
         max_tokens: int,
     ) -> tuple[MCTSNode, int, str]:
         best_root = self._select_best_node(root_nodes)
@@ -61,7 +62,7 @@ class ConversationAnalyzer:
         best_node: MCTSNode,
         all_nodes: list[MCTSNode],
         messages: list[Message],
-        goal: Optional[str],
+        goal: str | None,
         max_tokens: int,
     ) -> str:
         prompt = self._build_analysis_prompt(best_node, all_nodes, goal)
@@ -78,7 +79,7 @@ class ConversationAnalyzer:
             logger.error("Failed to generate analysis", exc_info=True)
             return self._get_default_analysis(best_node, all_nodes.index(best_node))
 
-    def _build_analysis_prompt(self, best_node: MCTSNode, all_nodes: list[MCTSNode], goal: Optional[str]) -> Message:
+    def _build_analysis_prompt(self, best_node: MCTSNode, all_nodes: list[MCTSNode], goal: str | None) -> Message:
         goal_section = f"<conversation_goal>{goal}</conversation_goal>\n" if goal else ""
 
         options_data = [
