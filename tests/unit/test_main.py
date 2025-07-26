@@ -236,10 +236,11 @@ class TestMainModule:
     def test_main_execution(self):
         """Test main module execution block exists."""
         import inspect
+
         import app.main
-        
+
         source = inspect.getsource(app.main)
-        
+
         assert 'if __name__ == "__main__":' in source
         assert 'run_uvicorn()' in source
 

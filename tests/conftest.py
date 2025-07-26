@@ -47,7 +47,7 @@ def mock_retry_delays(request):
     if request.node.parent and request.node.parent.name == "TestConstants":
         yield
         return
-        
+
     with patch("app.utils.constants.RETRY_MIN_WAIT", 0.001), \
          patch("app.utils.constants.RETRY_MAX_WAIT", 0.01), \
          patch("app.utils.constants.RETRY_MULTIPLIER", 0.001), \
@@ -59,11 +59,11 @@ def mock_retry_delays(request):
 def mock_tenacity_retry():
     """Mock tenacity retry decorators to speed up tests."""
     from tenacity import retry as original_retry
-    
+
     def fast_retry(*args, **kwargs):
         kwargs['wait'] = lambda retry_state: 0.001
         return original_retry(*args, **kwargs)
-    
+
     with patch("tenacity.retry", side_effect=fast_retry):
         yield
 
@@ -74,12 +74,12 @@ def mock_asyncio_sleep(request):
     if request.node.parent and request.node.parent.name == "TestConstants":
         yield
         return
-        
+
     import asyncio
     original_sleep = asyncio.sleep
-    
+
     async def fast_sleep(seconds):
         await original_sleep(min(seconds * 0.001, 0.001))
-    
+
     with patch("asyncio.sleep", side_effect=fast_sleep):
         yield

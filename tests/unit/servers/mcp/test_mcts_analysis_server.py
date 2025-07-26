@@ -92,7 +92,7 @@ async def test_analyze_conversation_basic(mock_services):
         mcts_server.scorer = mock_services["scorer"]
         mcts_server.analyzer = mock_services["analyzer"]
         mcts_server.mcts_algorithm = mock_services["mcts_algorithm"]
-    
+
     with patch("servers.mcp.mcts_analysis_server.initialize_services", side_effect=fast_initialize_services):
         from servers.mcp.mcts_analysis_server import initialize_services
         await initialize_services()
@@ -133,7 +133,7 @@ async def test_analyze_conversation_with_custom_params(mock_services):
         mcts_server.scorer = mock_services["scorer"]
         mcts_server.analyzer = mock_services["analyzer"]
         mcts_server.mcts_algorithm = mock_services["mcts_algorithm"]
-    
+
     with patch("servers.mcp.mcts_analysis_server.initialize_services", side_effect=fast_initialize_services):
         from servers.mcp.mcts_analysis_server import initialize_services
         await initialize_services()
@@ -178,7 +178,7 @@ async def test_analyze_conversation_error_handling():
             import servers.mcp.mcts_analysis_server as mcts_server
             mcts_server._services_initialized = True
             mcts_server.response_generator = mock_gen
-        
+
         with patch("servers.mcp.mcts_analysis_server.initialize_services", side_effect=fast_initialize_services):
             from servers.mcp.mcts_analysis_server import initialize_services
             await initialize_services()
