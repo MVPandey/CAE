@@ -41,7 +41,6 @@ def sample_nodes():
         }
         node.goal_metrics = {"success": 0.85 - (i * 0.1)}
 
-        # Add children to demonstrate hierarchy
         for j in range(2):
             child = MCTSNode(f"Child response {i}-{j}", index=j)
             node.add_child(child)
@@ -71,21 +70,17 @@ class TestConversationAnalyzer:
         goal = "Help user learn Python"
         max_tokens = 100
 
-        # Mock LLM response
         mock_response = Mock(content="This response is optimal because it clearly addresses the user's needs.")
         mock_llm_service.query_llm = AsyncMock(return_value=mock_response)
 
-        # Execute
         best_node, best_idx, analysis = await analyzer.analyze_best_path(
             sample_nodes, sample_messages, goal, max_tokens
         )
 
-        # Verify
         assert best_node == sample_nodes[0]  # Highest scoring node
         assert best_idx == 0
         assert analysis == mock_response.content
 
-        # Verify LLM was called with correct parameters
         mock_llm_service.query_llm.assert_called_once()
         call_args = mock_llm_service.query_llm.call_args
         assert call_args.kwargs["json_response"] is False
@@ -99,22 +94,18 @@ class TestConversationAnalyzer:
         goal = "Help user"
         max_tokens = 100
 
-        # Mock LLM to raise exception
         mock_llm_service.query_llm = AsyncMock(side_effect=Exception("LLM error"))
 
         with patch("app.services.conversation_analysis.analyzer.logger") as mock_logger:
-            # Execute
             best_node, best_idx, analysis = await analyzer.analyze_best_path(
                 sample_nodes, sample_messages, goal, max_tokens
             )
 
-            # Verify fallback behavior
             assert best_node == sample_nodes[0]
             assert best_idx == 0
             assert "Selected response 1" in analysis
             assert "0.90" in analysis  # Score should be in analysis
 
-            # Verify error was logged
             mock_logger.error.assert_called_once()
 
     def test_convert_to_branches(self, analyzer, sample_nodes):
@@ -137,7 +128,6 @@ class TestConversationAnalyzer:
 
     def test_select_best_node_by_score_and_visits(self, analyzer, sample_nodes):
         """Test best node selection considering both score and visits."""
-        # Adjust node properties to test selection logic
         sample_nodes[0].avg_score = 0.8
         sample_nodes[0].visits = 10
 
@@ -149,10 +139,6 @@ class TestConversationAnalyzer:
 
         best_node = analyzer._select_best_node(sample_nodes)
 
-        # Should select node with best weighted combination
-        # Node 0: 0.8 * 0.7 + (10/40) * 0.3 = 0.56 + 0.075 = 0.635
-        # Node 1: 0.75 * 0.7 + (25/40) * 0.3 = 0.525 + 0.1875 = 0.7125 (highest)
-        # Node 2: 0.7 * 0.7 + (5/40) * 0.3 = 0.49 + 0.0375 = 0.5275
         assert best_node == sample_nodes[1]
 
     def test_select_best_node_zero_visits(self, analyzer):
@@ -169,7 +155,6 @@ class TestConversationAnalyzer:
 
         best_node = analyzer._select_best_node(nodes)
 
-        # Should select based on score alone when no visits
         assert best_node == nodes[0]
 
     def test_build_analysis_prompt(self, analyzer, sample_nodes):
@@ -186,7 +171,6 @@ class TestConversationAnalyzer:
         assert str(best_node.avg_score) in prompt.content
         assert str(best_node.visits) in prompt.content
 
-        # Check that all options are included
         for node in sample_nodes:
             assert node.response[:100] in prompt.content
 
@@ -219,14 +203,12 @@ class TestConversationAnalyzer:
 
         prompt = analyzer._build_analysis_prompt(nodes[0], nodes, "Test goal")
 
-        # Should handle empty metrics gracefully
         assert isinstance(prompt, Message)
         assert "key_strength" in prompt.content
 
     @pytest.mark.asyncio
     async def test_analyze_best_path_with_equal_scores(self, analyzer, mock_llm_service):
         """Test best path analysis when multiple nodes have equal scores."""
-        # Create nodes with equal scores but different visits
         nodes = []
         for i in range(3):
             node = MCTSNode(f"Response {i}", index=i)
@@ -243,7 +225,6 @@ class TestConversationAnalyzer:
             nodes, sample_messages, None, 100
         )
 
-        # Should select node with most visits when scores are equal
         assert best_node == nodes[2]
         assert best_idx == 2
 
@@ -284,7 +265,6 @@ class TestConversationAnalyzer:
 
         await analyzer.analyze_best_path(sample_nodes, sample_messages, "Goal", 100)
 
-        # Verify message order: prompt first, then conversation history
         call_args = mock_llm_service.query_llm.call_args
         messages = call_args.kwargs["messages"]
 

@@ -28,16 +28,13 @@ class TestLLMService:
              patch("app.services.llm_service.ToolExecutor") as mock_executor_cls, \
              patch("app.services.llm_service.tool_registry") as mock_registry:
 
-            # Setup mock client
             mock_client = MagicMock()
             mock_client_cls.return_value = mock_client
             mock_client_cls.get_retry_decorator.return_value = lambda func: func
 
-            # Setup mock executor
             mock_executor = MagicMock()
             mock_executor_cls.return_value = mock_executor
 
-            # Setup mock registry
             mock_registry.list_tool_names.return_value = []
             mock_registry.tools = {}
 
@@ -98,20 +95,16 @@ class TestLLMService:
     @pytest.mark.asyncio
     async def test_query_llm_simple_message(self, llm_service, mock_completion):
         """Test query_llm with a simple message."""
-        # Setup
         message = Message(role="user", content="Hello")
 
         with patch.object(llm_service, "_make_llm_request", AsyncMock(return_value=mock_completion)):
-            # Execute
             result = await llm_service.query_llm(message)
 
-        # Verify
         assert result == mock_completion.choices[0].message
 
     @pytest.mark.asyncio
     async def test_query_llm_message_list(self, llm_service, mock_completion):
         """Test query_llm with a list of messages."""
-        # Setup
         messages = [
             Message(role="user", content="Hello"),
             Message(role="assistant", content="Hi"),
@@ -119,30 +112,24 @@ class TestLLMService:
         ]
 
         with patch.object(llm_service, "_make_llm_request", AsyncMock(return_value=mock_completion)):
-            # Execute
             result = await llm_service.query_llm(messages)
 
-        # Verify
         assert result == mock_completion.choices[0].message
 
     @pytest.mark.asyncio
     async def test_query_llm_json_response(self, llm_service, mock_completion):
         """Test query_llm with JSON response format."""
-        # Setup
         mock_completion.choices[0].message.content = '{"key": "value"}'
         message = Message(role="user", content="Give JSON")
 
         with patch.object(llm_service, "_make_llm_request", AsyncMock(return_value=mock_completion)):
-            # Execute
             result = await llm_service.query_llm(message, json_response=True)
 
-        # Verify
         assert result == {"key": "value"}
 
     @pytest.mark.asyncio
     async def test_query_llm_invalid_json_response(self, llm_service, mock_completion):
         """Test query_llm with invalid JSON response."""
-        # Setup
         mock_completion.choices[0].message.content = "Not valid JSON"
         message = Message(role="user", content="Give JSON")
 
@@ -151,17 +138,14 @@ class TestLLMService:
 
             mock_clean.return_value = {"cleaned": True}
 
-            # Execute
             result = await llm_service.query_llm(message, json_response=True)
 
-        # Verify
         mock_clean.assert_called_once_with("Not valid JSON")
         assert result == {"cleaned": True}
 
     @pytest.mark.asyncio
     async def test_query_llm_with_tools(self, llm_service, mock_completion):
         """Test query_llm with tools."""
-        # Setup
         message = Message(role="user", content="Use tools")
 
         with patch.object(llm_service, "_make_llm_request", AsyncMock(return_value=mock_completion)), \
@@ -169,16 +153,13 @@ class TestLLMService:
 
             mock_prepare.return_value = [{"name": "tool1"}]
 
-            # Execute
             await llm_service.query_llm(message, tools=["tool1"])
 
-        # Verify
         mock_prepare.assert_called_once_with(["tool1"])
 
     @pytest.mark.asyncio
     async def test_query_llm_with_tool_calls(self, llm_service, mock_completion):
         """Test query_llm when response contains tool calls."""
-        # Setup
         mock_tool_call = MagicMock()
         mock_completion.choices[0].message.tool_calls = [mock_tool_call]
 
@@ -188,10 +169,8 @@ class TestLLMService:
              patch.object(llm_service, "_handle_tool_workflow", AsyncMock(return_value=mock_completion)), \
              patch.object(llm_service, "_prepare_tools", return_value=[{"name": "tool1"}]):
 
-            # Execute
             result = await llm_service.query_llm(message, tools=["tool1"])
 
-        # Verify
         assert result == mock_completion.choices[0].message
 
     @pytest.mark.asyncio
@@ -199,15 +178,12 @@ class TestLLMService:
         """Test query_llm parameter validation."""
         message = Message(role="user", content="Test")
 
-        # Test invalid max_tokens
         with pytest.raises(ValueError, match="max_tokens must be positive"):
             await llm_service.query_llm(message, max_tokens=0)
 
-        # Test invalid temperature
         with pytest.raises(ValueError, match="temperature must be between 0 and 2"):
             await llm_service.query_llm(message, temperature=2.5)
 
-        # Test invalid top_p
         with pytest.raises(ValueError, match="top_p must be between 0 and 1"):
             await llm_service.query_llm(message, top_p=1.5)
 
@@ -261,7 +237,6 @@ class TestLLMService:
     @pytest.mark.asyncio
     async def test_make_llm_request(self, llm_service, mock_completion):
         """Test _make_llm_request method."""
-        # Setup
         messages = [Message(role="user", content="Test")]
         tools = [{"name": "tool1"}]
 
@@ -269,9 +244,7 @@ class TestLLMService:
         mock_client.chat.completions.create = AsyncMock(return_value=mock_completion)
         llm_service.client.get_client.return_value = mock_client
 
-        # Patch the retry decorator to bypass it
         with patch.object(llm_service, 'retry_decorator', lambda f: f):
-            # Execute
             result = await llm_service._make_llm_request(
                 messages=messages,
                 tools=tools,
@@ -280,7 +253,6 @@ class TestLLMService:
                 max_tokens=500
             )
 
-        # Verify
         assert result == mock_completion
         mock_client.chat.completions.create.assert_called_once()
         call_args = mock_client.chat.completions.create.call_args[1]
@@ -292,28 +264,23 @@ class TestLLMService:
     @pytest.mark.asyncio
     async def test_handle_tool_workflow(self, llm_service, mock_completion):
         """Test _handle_tool_workflow method."""
-        # Setup initial completion with tool calls
         initial_completion = MagicMock(spec=ChatCompletion)
         initial_completion.choices = [MagicMock()]
         initial_completion.choices[0].message.tool_calls = [MagicMock()]
         initial_completion.choices[0].message.model_dump.return_value = {"role": "assistant"}
 
-        # Setup tool execution results
         tool_results = [
             ToolMessage(role="tool", tool_call_id="123", name="tool1", content="Result")
         ]
         llm_service.tool_executor.execute_tool_calls = AsyncMock(return_value=tool_results)
 
-        # Setup final completion
         mock_client = MagicMock()
         mock_client.chat.completions.create = AsyncMock(return_value=mock_completion)
         llm_service.client.get_client.return_value = mock_client
 
         messages = [Message(role="user", content="Test")]
 
-        # Patch the retry decorator to bypass it
         with patch.object(llm_service, 'retry_decorator', lambda f: f):
-            # Execute
             result = await llm_service._handle_tool_workflow(
                 initial_completion=initial_completion,
                 messages=messages,
@@ -322,7 +289,6 @@ class TestLLMService:
                 max_tokens=500
             )
 
-        # Verify
         assert result == mock_completion
         llm_service.tool_executor.execute_tool_calls.assert_called_once()
 
@@ -352,7 +318,6 @@ class TestLLMService:
     @pytest.mark.asyncio
     async def test_handle_tool_calls_backward_compatibility(self, llm_service):
         """Test handle_tool_calls method for backward compatibility."""
-        # Setup
         tool_calls = [MagicMock(spec=ToolCall)]
         expected_results = [
             ToolMessage(role="tool", tool_call_id="123", name="tool1", content="Result")
@@ -360,26 +325,21 @@ class TestLLMService:
 
         llm_service.tool_executor.execute_tool_calls = AsyncMock(return_value=expected_results)
 
-        # Execute
         result = await llm_service.handle_tool_calls(tool_calls)
 
-        # Verify
         assert result == expected_results
         llm_service.tool_executor.execute_tool_calls.assert_called_once_with(tool_calls)
 
     @pytest.mark.asyncio
     async def test_query_llm_with_additional_kwargs(self, llm_service, mock_completion):
         """Test query_llm with additional keyword arguments."""
-        # Setup
         message = Message(role="user", content="Test")
 
         mock_client = MagicMock()
         mock_client.chat.completions.create = AsyncMock(return_value=mock_completion)
         llm_service.client.get_client.return_value = mock_client
 
-        # Patch the retry decorator to bypass it
         with patch.object(llm_service, 'retry_decorator', lambda f: f):
-            # Execute
             await llm_service.query_llm(
                 message,
                 temperature=0.7,
@@ -388,7 +348,6 @@ class TestLLMService:
                 presence_penalty=0.3
             )
 
-        # Verify additional kwargs were passed
         call_args = mock_client.chat.completions.create.call_args[1]
         assert call_args["temperature"] == 0.7
         assert call_args["top_p"] == 0.9

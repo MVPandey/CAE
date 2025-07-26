@@ -21,26 +21,21 @@ class TestPROMPTS:
 
     def test_system_prompt_empty(self):
         """Test that SYSTEM_PROMPT is currently empty."""
-        # This is based on current implementation
         assert PROMPTS.SYSTEM_PROMPT == ""
 
     def test_prompts_class_not_instantiable(self):
         """Test that PROMPTS is used as a namespace, not instantiated."""
-        # PROMPTS should be used as a class with class attributes
-        # Creating an instance is possible but not the intended use
         instance = PROMPTS()
         assert hasattr(instance, "SYSTEM_PROMPT")
 
     def test_dedent_import_used(self):
         """Test that dedent is available for prompt formatting."""
-        # This tests the import is available for future use
         test_text = """
             This is a
             multiline text
             with indentation
         """
         dedented = dedent(test_text)
-        # dedent() preserves leading/trailing newlines, so strip them
         dedented = dedented.strip()
         assert not dedented.startswith(" ")  # Check indentation is removed
         assert "This is a" in dedented
@@ -49,7 +44,6 @@ class TestPROMPTS:
         """Test that PROMPTS values maintain their state."""
         original_prompt = PROMPTS.SYSTEM_PROMPT
 
-        # Even after access, the value should remain the same
         assert PROMPTS.SYSTEM_PROMPT == original_prompt
         assert PROMPTS.SYSTEM_PROMPT == ""
 
@@ -62,16 +56,11 @@ class TestPROMPTS:
 
     def test_prompts_extensibility(self):
         """Test that PROMPTS class can be extended with new prompts."""
-        # This is a design test - the class should be able to hold multiple prompts
-        # Currently only has SYSTEM_PROMPT, but structure allows for more
 
-        # We can dynamically add prompts (though not recommended in production)
         original_attrs = set(dir(PROMPTS))
 
-        # The class structure allows for adding more class attributes
         PROMPTS.TEST_PROMPT = "test"
         assert hasattr(PROMPTS, "TEST_PROMPT")
 
-        # Clean up
         delattr(PROMPTS, "TEST_PROMPT")
         assert set(dir(PROMPTS)) == original_attrs

@@ -53,7 +53,6 @@ class TestConfig:
 
     def test_config_default_values(self, monkeypatch):
         """Test Config default values."""
-        # Set only required fields
         env_vars = {
             "LLM_API_KEY": "key",
             "LLM_API_BASE_URL": "url",
@@ -72,7 +71,6 @@ class TestConfig:
 
         config = Config()
 
-        # Check defaults
         assert config.LOG_LEVEL == "INFO"  # Default value
         assert config.LLM_TIMEOUT_SECONDS == 600  # Default value
 
@@ -101,20 +99,16 @@ class TestConfig:
         """Test that Config converts types correctly."""
         config = Config()
 
-        # DB_PORT should be converted to int
         assert isinstance(config.DB_PORT, int)
         assert config.DB_PORT == 5432
 
-        # LLM_TIMEOUT_SECONDS should be converted to int
         assert isinstance(config.LLM_TIMEOUT_SECONDS, int)
         assert config.LLM_TIMEOUT_SECONDS == 300
 
     def test_config_missing_required_fields(self, monkeypatch, tmp_path):
         """Test Config raises error when required fields are missing."""
-        # Change to a temp directory without .env file
         monkeypatch.chdir(tmp_path)
 
-        # Clear all env vars
         for key in os.environ.copy():
             if key.startswith(("LLM_", "EMBEDDING_", "DB_")):
                 monkeypatch.delenv(key, raising=False)
@@ -123,7 +117,6 @@ class TestConfig:
             Config()
 
         errors = exc_info.value.errors()
-        # Should have errors for all required fields
         error_fields = {error["loc"][0] for error in errors}
         expected_fields = {
             "LLM_API_KEY", "LLM_API_BASE_URL", "LLM_MODEL_NAME",
@@ -158,7 +151,6 @@ class TestConfig:
 
     def test_config_env_file_loading(self, tmp_path, monkeypatch):
         """Test Config can load from .env file."""
-        # Create a temporary .env file
         env_file = tmp_path / ".env"
         env_content = """
 LLM_API_KEY=file-llm-key
@@ -176,10 +168,8 @@ LOG_LEVEL=WARNING
 """
         env_file.write_text(env_content)
 
-        # Change to temp directory
         monkeypatch.chdir(tmp_path)
 
-        # Clear environment variables to ensure we're reading from file
         for key in ["LLM_API_KEY", "LLM_API_BASE_URL", "LLM_MODEL_NAME",
                    "EMBEDDING_MODEL_API_KEY", "EMBEDDING_MODEL_BASE_URL", "EMBEDDING_MODEL_NAME",
                    "DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_SECRET", "LOG_LEVEL"]:
@@ -193,7 +183,6 @@ LOG_LEVEL=WARNING
 
     def test_config_env_override_file(self, tmp_path, monkeypatch):
         """Test that environment variables override .env file values."""
-        # Create a temporary .env file
         env_file = tmp_path / ".env"
         env_content = """
 LLM_API_KEY=file-key
@@ -201,14 +190,11 @@ DB_PORT=6432
 """
         env_file.write_text(env_content)
 
-        # Change to temp directory
         monkeypatch.chdir(tmp_path)
 
-        # Set environment variable that should override file
         monkeypatch.setenv("LLM_API_KEY", "env-key")
         monkeypatch.setenv("DB_PORT", "7432")
 
-        # Set other required fields
         monkeypatch.setenv("LLM_API_BASE_URL", "url")
         monkeypatch.setenv("LLM_MODEL_NAME", "model")
         monkeypatch.setenv("EMBEDDING_MODEL_API_KEY", "key")
@@ -221,7 +207,6 @@ DB_PORT=6432
 
         config = Config()
 
-        # Environment should override file
         assert config.LLM_API_KEY == "env-key"
         assert config.DB_PORT == 7432
 
@@ -238,18 +223,13 @@ class TestAppSettings:
 
     def test_app_settings_singleton(self):
         """Test that app_settings is properly initialized."""
-        # Import the singleton
         from app.utils.config import app_settings
 
-        # The app_settings is already loaded from the actual .env file
-        # Just verify it has valid values
         assert app_settings.LLM_API_KEY is not None
         assert isinstance(app_settings.LLM_API_KEY, str)
         assert len(app_settings.LLM_API_KEY) > 0
 
-        # Check that DB_PORT is a valid integer
         assert isinstance(app_settings.DB_PORT, int)
         assert app_settings.DB_PORT > 0
 
-        # Check LOG_LEVEL
         assert app_settings.LOG_LEVEL in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]

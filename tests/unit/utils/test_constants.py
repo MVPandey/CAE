@@ -31,13 +31,11 @@ class TestConstants:
         assert constants.RETRY_MAX_WAIT == 60
         assert constants.RETRY_MULTIPLIER == 1
 
-        # Verify types
         assert isinstance(constants.RETRY_MAX_ATTEMPTS, int)
         assert isinstance(constants.RETRY_MIN_WAIT, int)
         assert isinstance(constants.RETRY_MAX_WAIT, int)
         assert isinstance(constants.RETRY_MULTIPLIER, int)
 
-        # Verify relationships
         assert constants.RETRY_MIN_WAIT < constants.RETRY_MAX_WAIT
         assert constants.RETRY_MAX_ATTEMPTS > 0
         assert constants.RETRY_MIN_WAIT > 0
@@ -48,11 +46,9 @@ class TestConstants:
         assert constants.REQUEST_ID_PREFIX_LLM == "llm"
         assert constants.REQUEST_ID_PREFIX_TOOL == "tool"
 
-        # Verify types
         assert isinstance(constants.REQUEST_ID_PREFIX_LLM, str)
         assert isinstance(constants.REQUEST_ID_PREFIX_TOOL, str)
 
-        # Verify non-empty
         assert len(constants.REQUEST_ID_PREFIX_LLM) > 0
         assert len(constants.REQUEST_ID_PREFIX_TOOL) > 0
 
@@ -62,22 +58,18 @@ class TestConstants:
         assert constants.LOG_RESPONSE_PREVIEW_LENGTH == 500
         assert constants.LOG_ERROR_RESPONSE_LENGTH == 1000
 
-        # Verify types
         assert isinstance(constants.LOG_CONTENT_PREVIEW_LENGTH, int)
         assert isinstance(constants.LOG_RESPONSE_PREVIEW_LENGTH, int)
         assert isinstance(constants.LOG_ERROR_RESPONSE_LENGTH, int)
 
-        # Verify relationships
         assert constants.LOG_CONTENT_PREVIEW_LENGTH < constants.LOG_RESPONSE_PREVIEW_LENGTH
         assert constants.LOG_RESPONSE_PREVIEW_LENGTH < constants.LOG_ERROR_RESPONSE_LENGTH
         assert constants.LOG_CONTENT_PREVIEW_LENGTH > 0
 
     def test_constants_immutability(self):
         """Test that constants maintain their values."""
-        # Store original values
         original_max_tokens = constants.DEFAULT_MAX_TOKENS
         original_timeout = constants.DEFAULT_LLM_TIMEOUT
 
-        # Constants should not change
         assert constants.DEFAULT_MAX_TOKENS == original_max_tokens
         assert constants.DEFAULT_LLM_TIMEOUT == original_timeout

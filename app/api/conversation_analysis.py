@@ -11,16 +11,21 @@ from ..schema.conversation_analysis import (
 from ..services.conversation_analysis_service import ConversationAnalysisService
 from ..utils.logger import logger
 
-router = APIRouter(prefix="/analysis", tags=["Conversation Analysis"])
+router = APIRouter(prefix="/analysis", tags=["Conversation Analysis - DEPRECATED"])
 
 
-@router.post("/", response_model=ConversationAnalysisResponse)
+@router.post("/", response_model=ConversationAnalysisResponse, deprecated=True)
 async def analyze_conversation(
     request: ConversationAnalysisRequest,
     service: ConversationAnalysisService = Depends(ConversationAnalysisService),
 ):
     """
-    Analyzes a conversation using MCTS to find the highest EQ response path.
+    [DEPRECATED] Analyzes a conversation using MCTS to find the highest EQ response path.
+
+    **This endpoint is deprecated. Please use the MCP server instead:**
+    - Server location: app/mcp/mcts_analysis_server.py
+    - Default endpoint: http://0.0.0.0:8001/mcp/v1
+    - Protocol: Model Context Protocol (MCP)
 
     This endpoint:
     1. Generates 5 different response branches
@@ -88,10 +93,13 @@ async def analyze_conversation(
         raise HTTPException(status_code=500, detail="Internal server error: " + str(e))
 
 
-@router.get("/{chat_id}", response_model=list[ConversationAnalysisResponse])
+@router.get("/{chat_id}", response_model=list[ConversationAnalysisResponse], deprecated=True)
 async def get_conversation_analyses(chat_id: UUID):
     """
-    Retrieves all analyses performed for a specific chat session.
+    [DEPRECATED] Retrieves all analyses performed for a specific chat session.
+
+    **This endpoint is deprecated. The MCP server does not persist analyses.**
+    For persistence, implement your own storage solution with the MCP server.
     """
     logger.info(
         "Retrieving analyses for chat",

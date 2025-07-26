@@ -59,7 +59,6 @@ class TestChatService:
         mock_uuid
     ):
         """Test processing message with new chat session."""
-        # Setup mocks
         mock_session = MagicMock()
         mock_session.id = mock_uuid
         mock_create_session.return_value = mock_session
@@ -74,14 +73,12 @@ class TestChatService:
         mock_llm_response.tool_calls = None
 
         with patch.object(chat_service.llm_service, "query_llm", AsyncMock(return_value=mock_llm_response)):
-            # Execute
             result = await chat_service.process_message(
                 chat_id=None,
                 user_id=mock_uuid,
                 user_message="Hello"
             )
 
-        # Verify
         mock_create_session.assert_called_once_with(mock_uuid)
         assert mock_create_message.call_count == 2  # User message + assistant message
         mock_get_history.assert_called_with(mock_uuid)
@@ -98,7 +95,6 @@ class TestChatService:
         mock_uuid
     ):
         """Test processing message with existing chat session."""
-        # Setup mocks
         mock_history = [
             ChatMessage(chat_id=mock_uuid, role=ChatRole.USER, content="Hello"),
             ChatMessage(chat_id=mock_uuid, role=ChatRole.ASSISTANT, content="Hi!"),
@@ -111,14 +107,12 @@ class TestChatService:
         mock_llm_response.tool_calls = None
 
         with patch.object(chat_service.llm_service, "query_llm", AsyncMock(return_value=mock_llm_response)):
-            # Execute
             result = await chat_service.process_message(
                 chat_id=mock_uuid,
                 user_id=mock_uuid,
                 user_message="How are you?"
             )
 
-        # Verify
         assert mock_create_message.call_count == 2  # User message + assistant message
         mock_get_history.assert_called_with(mock_uuid)
         assert result == mock_history
@@ -134,7 +128,6 @@ class TestChatService:
         mock_uuid
     ):
         """Test processing message with tool calls in response."""
-        # Setup mocks
         mock_history = [
             ChatMessage(chat_id=mock_uuid, role=ChatRole.USER, content="Get weather")
         ]
@@ -156,17 +149,14 @@ class TestChatService:
         chat_service.llm_service.tools = {"get_weather": {}}
 
         with patch.object(chat_service.llm_service, "query_llm", AsyncMock(return_value=mock_llm_response)):
-            # Execute
             await chat_service.process_message(
                 chat_id=mock_uuid,
                 user_id=mock_uuid,
                 user_message="Get weather"
             )
 
-        # Verify
         assert mock_create_message.call_count == 2
 
-        # Check that the assistant message includes tool calls
         assistant_msg_call = mock_create_message.call_args_list[1]
         assistant_msg = assistant_msg_call[0][0]
         assert assistant_msg.tool_calls == {"tool_calls": [mock_tool_call.model_dump.return_value]}
@@ -182,7 +172,6 @@ class TestChatService:
         mock_uuid
     ):
         """Test processing message with empty LLM response."""
-        # Setup mocks
         mock_history = [
             ChatMessage(chat_id=mock_uuid, role=ChatRole.USER, content="Hello")
         ]
@@ -195,14 +184,12 @@ class TestChatService:
         chat_service.llm_service.tools = {}
 
         with patch.object(chat_service.llm_service, "query_llm", AsyncMock(return_value=mock_llm_response)):
-            # Execute
             await chat_service.process_message(
                 chat_id=mock_uuid,
                 user_id=mock_uuid,
                 user_message="Hello"
             )
 
-        # Verify - should save empty string for content
         assistant_msg_call = mock_create_message.call_args_list[1]
         assistant_msg = assistant_msg_call[0][0]
         assert assistant_msg.content == ""
@@ -218,7 +205,6 @@ class TestChatService:
         mock_uuid
     ):
         """Test proper conversion of chat history to LLM messages."""
-        # Setup mocks with mixed message types
         mock_history = [
             ChatMessage(chat_id=mock_uuid, role=ChatRole.USER, content="Hello"),
             ChatMessage(chat_id=mock_uuid, role=ChatRole.ASSISTANT, content="Hi!"),
@@ -233,14 +219,12 @@ class TestChatService:
         chat_service.llm_service.tools = {}
 
         with patch.object(chat_service.llm_service, "query_llm", AsyncMock(return_value=mock_llm_response)) as mock_query:
-            # Execute
             await chat_service.process_message(
                 chat_id=mock_uuid,
                 user_id=mock_uuid,
                 user_message="Test"
             )
 
-        # Verify LLM messages were properly converted
         llm_messages = mock_query.call_args[0][0]
         assert len(llm_messages) == 3
         assert all(isinstance(msg, LLMMessage) for msg in llm_messages)
@@ -264,7 +248,6 @@ class TestChatService:
         mock_uuid
     ):
         """Test handling of LLM service errors."""
-        # Setup mocks
         mock_session = MagicMock()
         mock_session.id = mock_uuid
         mock_create_session.return_value = mock_session
@@ -273,7 +256,6 @@ class TestChatService:
         chat_service.llm_service.tools = {}
 
         with patch.object(chat_service.llm_service, "query_llm", AsyncMock(side_effect=Exception("LLM Error"))):
-            # Execute and verify exception is propagated
             with pytest.raises(Exception, match="LLM Error"):
                 await chat_service.process_message(
                     chat_id=None,
@@ -281,7 +263,6 @@ class TestChatService:
                     user_message="Hello"
                 )
 
-        # Verify only user message was saved before error
         assert mock_create_message.call_count == 1
 
     @pytest.mark.asyncio
@@ -295,11 +276,9 @@ class TestChatService:
         mock_uuid
     ):
         """Test proper serialization of multiple tool calls."""
-        # Setup mocks
         mock_history = []
         mock_get_history.return_value = mock_history
 
-        # Create multiple tool calls
         tool_calls = []
         for i in range(3):
             mock_tool_call = MagicMock()
@@ -319,14 +298,12 @@ class TestChatService:
         chat_service.llm_service.tools = {"tool_0": {}, "tool_1": {}, "tool_2": {}}
 
         with patch.object(chat_service.llm_service, "query_llm", AsyncMock(return_value=mock_llm_response)):
-            # Execute
             await chat_service.process_message(
                 chat_id=mock_uuid,
                 user_id=mock_uuid,
                 user_message="Do multiple things"
             )
 
-        # Verify tool calls were properly serialized
         assistant_msg_call = mock_create_message.call_args_list[1]
         assistant_msg = assistant_msg_call[0][0]
         assert assistant_msg.tool_calls["tool_calls"] == [tc.model_dump.return_value for tc in tool_calls]

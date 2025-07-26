@@ -11,12 +11,10 @@ class MCTSNode:
         self.children: list[MCTSNode] = []
         self.index = index
 
-        # MCTS statistics
         self.visits = 0
         self.total_score = 0.0
         self.avg_score = 0.0
 
-        # Evaluation data
         self.simulated_reactions: list[str] = []
         self.sub_history: list[dict[str, str]] = []
         self.general_metrics: dict[str, float] = {}

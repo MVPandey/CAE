@@ -159,6 +159,5 @@ class TestExceptionHierarchy:
         assert isinstance(chat_error, ConversationAnalysisException)
         assert isinstance(mcts_error, ConversationAnalysisException)
 
-        # But not vice versa
         assert not isinstance(chat_error, MCTSException)
         assert not isinstance(mcts_error, ChatHistoryNotFoundError)

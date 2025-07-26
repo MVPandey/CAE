@@ -54,7 +54,6 @@ class TestConversationScorer:
         goal = "Help user debug code"
         max_tokens = 100
 
-        # Mock LLM response with complete scoring data
         expected_scores = {
             "general_metrics": {
                 "clarity": 0.85,
@@ -75,18 +74,15 @@ class TestConversationScorer:
 
         mock_llm_service.query_llm = AsyncMock(return_value=expected_scores)
 
-        # Execute
         result = await scorer.score_simulation(
             sample_messages, sample_simulation_data, goal, max_tokens
         )
 
-        # Verify
         assert result == expected_scores
         assert result["general_metrics"]["clarity"] == 0.85
         assert result["goal_metrics"]["problem_solving"] == 0.82
         assert result["overall_score"] == 0.86
 
-        # Verify LLM call
         mock_llm_service.query_llm.assert_called_once()
         call_args = mock_llm_service.query_llm.call_args
         assert call_args.kwargs["json_response"] is True
@@ -114,7 +110,6 @@ class TestConversationScorer:
         assert result == expected_scores
         assert result["goal_metrics"] == {}
 
-        # Check prompt doesn't include goal section
         messages = mock_llm_service.query_llm.call_args.kwargs["messages"]
         system_prompt = messages[0]
         assert "<goal_specific_scoring>" not in system_prompt.content
@@ -134,7 +129,6 @@ class TestConversationScorer:
                 sample_messages, sample_simulation_data, goal, max_tokens
             )
 
-            # Should return default scores
             assert result == scorer._get_default_scores()
             assert all(score == 0.5 for score in result["general_metrics"].values())
             assert result["overall_score"] == 0.5
@@ -212,7 +206,6 @@ class TestConversationScorer:
 
         validated = scorer._validate_scoring_result(result)
 
-        # Should add missing metrics with 0.0
         assert len(validated["general_metrics"]) == len(ScoringConfig.GENERAL_METRICS)
         assert validated["general_metrics"]["clarity"] == 0.9
         assert validated["general_metrics"]["relevance"] == 0.85
@@ -245,10 +238,6 @@ class TestConversationScorer:
         validated = scorer._validate_scoring_result(result)
 
         assert "overall_score" in validated
-        # Should calculate average of all general metrics that exist
-        # After validation, missing metrics are added with 0.0
-        # So we have: clarity=0.8, relevance=0.9, engagement=0.7,
-        # authenticity=0.0, coherence=0.0, respectfulness=0.0
         total = 0.8 + 0.9 + 0.7 + 0.0 + 0.0 + 0.0
         expected_score = total / len(ScoringConfig.GENERAL_METRICS)
         assert validated["overall_score"] == pytest.approx(expected_score, rel=1e-6)
@@ -262,7 +251,6 @@ class TestConversationScorer:
 
         validated = scorer._validate_scoring_result(result)
 
-        # Should add all metrics with 0.0
         assert len(validated["general_metrics"]) == len(ScoringConfig.GENERAL_METRICS)
         assert all(score == 0.0 for score in validated["general_metrics"].values())
         assert validated["overall_score"] == 0.0
@@ -275,7 +263,6 @@ class TestConversationScorer:
         assert "goal_metrics" in default_scores
         assert "overall_score" in default_scores
 
-        # Check all general metrics are present with 0.5
         assert len(default_scores["general_metrics"]) == len(ScoringConfig.GENERAL_METRICS)
         assert all(score == 0.5 for score in default_scores["general_metrics"].values())
 
@@ -294,7 +281,6 @@ class TestConversationScorer:
 
         await scorer.score_simulation(sample_messages, sample_simulation_data, goal, max_tokens)
 
-        # Check prompt structure
         messages = mock_llm_service.query_llm.call_args.kwargs["messages"]
         assert len(messages) == len(sample_messages) + 1
 
@@ -341,6 +327,5 @@ class TestConversationScorer:
 
         assert result == expected_scores
 
-        # Verify the complex data was included in prompt
         prompt = mock_llm_service.query_llm.call_args.kwargs["messages"][0]
         assert json.dumps(complex_simulation_data) in prompt.content

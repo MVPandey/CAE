@@ -44,9 +44,6 @@ class ChatService:
 
         llm_messages = [LLMMessage(role=h.role.value, content=h.content) for h in history]
 
-        # The LLM service handles the tool-calling loop internally. We get back
-        # the final assistant message. This means we cannot save intermediate
-        # tool requests and responses as separate messages.
         llm_response = await self.llm_service.query_llm(llm_messages, tools=list(self.llm_service.tools.keys()))
 
         tool_calls_for_db = None

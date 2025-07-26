@@ -216,14 +216,11 @@ class TestToolSchema:
         func = ToolFunction(name="test", description="test", parameters=params)
         schema = ToolSchema(function=func)
 
-        # Attempt to modify should raise an error
-        # In Pydantic v2, frozen models raise ValidationError when trying to set attributes
         with pytest.raises(ValidationError, match="Instance is frozen"):
             schema.type = "something_else"
 
     def test_tool_schema_example(self):
         """Test the example from the schema configuration."""
-        # Recreate the example from the schema
         params = ToolFunctionParameters(
             properties={
                 "location": ToolParameterProperty(
@@ -288,10 +285,8 @@ class TestAbstractTool:
                     return f"Weather in {location}: Sunny, 72°F"
                 return get_weather
 
-        # Should be able to access class variables
         assert WeatherTool.tool_schema.function.name == "get_weather"
 
-        # Should be able to call the tool function
         weather_func = WeatherTool.tool_function()
         result = weather_func("San Francisco")
         assert result == "Weather in San Francisco: Sunny, 72°F"
@@ -307,7 +302,6 @@ class TestAbstractTool:
                         parameters=ToolFunctionParameters(properties={})
                     )
                 )
-                # Missing tool_function implementation
 
             IncompleteTool()
 
