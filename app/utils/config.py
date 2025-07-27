@@ -57,7 +57,7 @@ class Config(BaseSettings):
     # ================================================================
     # Feature toggles
     # ================================================================
-    DISABLE_PROMETHEUS_METRICS: bool = Field(default=False, description="Disable Prometheus metrics collection")
+    DISABLE_PROMETHEUS_METRICS: bool = Field(default=True, description="Disable Prometheus metrics collection")
 
     # ================================================================
     # Application settings

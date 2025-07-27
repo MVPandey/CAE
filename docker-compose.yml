@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:14-alpine
+    image: postgres:17-alpine
     container_name: cae-postgres
     environment:
       POSTGRES_USER: ${DB_USER:-cae_user}
@@ -64,7 +64,7 @@ services:
       REDIS_PORT: 6379
       
       # Feature Toggles
-      DISABLE_PROMETHEUS_METRICS: ${DISABLE_PROMETHEUS_METRICS:-false}
+      DISABLE_PROMETHEUS_METRICS: ${DISABLE_PROMETHEUS_METRICS:-true}
       
       # Application Configuration
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
