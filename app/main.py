@@ -196,6 +196,7 @@ async def health_check():
     if app_settings.enable_semantic_cache:
         try:
             from .services.cache.semantic_cache import semantic_cache
+
             cache_healthy = await semantic_cache.health_check()
             health_status["services"]["cache"] = {"status": "healthy" if cache_healthy else "unhealthy"}
             if not cache_healthy:
@@ -235,6 +236,7 @@ async def health_check_detailed():
     if app_settings.enable_semantic_cache:
         try:
             from .services.cache.semantic_cache import semantic_cache
+
             if hasattr(semantic_cache, "get_stats"):
                 health_status["services"]["cache"]["stats"] = await semantic_cache.get_stats()
         except Exception:
@@ -251,10 +253,7 @@ async def get_metrics():
     from .utils.metrics import metrics_collector
 
     if not app_settings.enable_prometheus_metrics:
-        raise HTTPException(
-            status_code=404,
-            detail="Metrics disabled. Set DISABLE_PROMETHEUS_METRICS=false to enable."
-        )
+        raise HTTPException(status_code=404, detail="Metrics disabled. Set DISABLE_PROMETHEUS_METRICS=false to enable.")
 
     try:
         metrics_data = metrics_collector.get_metrics()
@@ -272,10 +271,7 @@ async def get_metrics_json():
     from .utils.metrics import metrics_collector
 
     if not app_settings.enable_prometheus_metrics:
-        raise HTTPException(
-            status_code=404,
-            detail="Metrics disabled. Set DISABLE_PROMETHEUS_METRICS=false to enable."
-        )
+        raise HTTPException(status_code=404, detail="Metrics disabled. Set DISABLE_PROMETHEUS_METRICS=false to enable.")
 
     try:
         metrics_dict = metrics_collector.get_metrics_dict()

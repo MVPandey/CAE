@@ -117,9 +117,7 @@ def create_mcp_server(initialize_on_startup: bool = True) -> FastMCP:
     )
 
 
-mcp = create_mcp_server(
-    initialize_on_startup=False
-)
+mcp = create_mcp_server(initialize_on_startup=False)
 
 
 @mcp.tool
