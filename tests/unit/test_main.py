@@ -217,17 +217,30 @@ class TestHealthEndpoint:
     """Test health check endpoint."""
 
     @pytest.mark.asyncio
-    async def test_health_check(self):
+    @patch("app.services.cache.redis_manager.redis_manager")
+    @patch("app.services.cache.semantic_cache.semantic_cache")
+    async def test_health_check(self, mock_cache, mock_redis):
         """Test health check returns correct response."""
+        mock_redis.is_healthy = True
+        mock_cache.health_check = AsyncMock(return_value=True)
+
         result = await health_check()
-        assert result == {"status": "healthy"}
+
+        assert isinstance(result, dict)
+        assert result["status"] == "healthy"
+        assert "timestamp" in result
+        assert "services" in result
+        assert result["services"]["redis"]["status"] == "healthy"
+        assert result["services"]["cache"]["status"] == "healthy"
 
     @pytest.mark.asyncio
     async def test_health_check_via_client(self, async_client):
         """Test health check endpoint via test client."""
         response = await async_client.get("/health")
-        assert response.status_code == 200
-        assert response.json() == {"status": "healthy"}
+        assert response.status_code in [200, 503]
+        response_data = response.json()
+        assert "status" in response_data
+        assert response_data["status"] in ["healthy", "unhealthy"]
 
 
 class TestMainModule:

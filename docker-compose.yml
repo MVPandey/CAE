@@ -19,6 +19,21 @@ services:
       retries: 5
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    container_name: cae-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   cae:
     build:
       context: .
@@ -40,15 +55,21 @@ services:
       DB_NAME: ${DB_NAME:-conversation_analysis}
       DB_USER: ${DB_USER:-cae_user}
       DB_SECRET: ${DB_SECRET:-cae_password}
+      # Redis Configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       # Application Configuration
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-600}
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: unless-stopped
     volumes:
       - ./logs:/app/logs
 
 volumes:
-  postgres_data: 
+  postgres_data:
+  redis_data:

@@ -10,9 +10,12 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api import chat as chat_api
 from app.api import conversation_analysis as analysis_api
+from app.api import monitoring as monitoring_api
 from app.api import user as user_api
 from app.db.chat import db
+from app.services.cache.redis_manager import redis_manager
 from app.utils.logger import logger
+from app.utils.metrics import metrics_collector
 
 
 @asynccontextmanager
@@ -21,10 +24,21 @@ async def lifespan(app: FastAPI):
     Handles startup and shutdown events for the application.
     """
     logger.info("Starting up...")
+
     await db.create_db_and_tables()
     logger.info("Database tables created or already exist.")
+
+    await redis_manager.initialize()
+    logger.info("Redis cache initialized.")
+
+    metrics_collector.initialize()
+    logger.info("Metrics collector initialized.")
+
     yield
+
     logger.info("Shutting down...")
+    await redis_manager.close()
+    logger.info("Redis connections closed.")
 
 
 app = FastAPI(
@@ -142,12 +156,106 @@ async def general_exception_handler(request: Request, exc: Exception):
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    """Health check endpoint that validates all services."""
+    import time
+
+    from .services.cache.redis_manager import redis_manager
+    from .services.cache.semantic_cache import semantic_cache
+    from .utils.config import app_settings
+
+    health_status = {
+        "status": "healthy",
+        "timestamp": int(time.time()),
+        "version": app_settings.VERSION if hasattr(app_settings, "VERSION") else "unknown",
+        "services": {},
+    }
+
+    try:
+        redis_healthy = redis_manager.is_healthy
+        health_status["services"]["redis"] = {"status": "healthy" if redis_healthy else "unhealthy"}
+        if not redis_healthy:
+            health_status["status"] = "unhealthy"
+    except Exception as e:
+        health_status["services"]["redis"] = {"status": "unhealthy", "error": str(e)}
+        health_status["status"] = "unhealthy"
+
+    try:
+        cache_healthy = await semantic_cache.health_check()
+        health_status["services"]["cache"] = {"status": "healthy" if cache_healthy else "unhealthy"}
+        if not cache_healthy:
+            health_status["status"] = "unhealthy"
+            health_status["services"]["cache"]["error"] = "Cache health check failed"
+    except Exception as e:
+        health_status["services"]["cache"] = {"status": "unhealthy", "error": str(e)}
+        health_status["status"] = "unhealthy"
+
+    if health_status["status"] == "unhealthy":
+        return JSONResponse(status_code=503, content=health_status)
+
+    return health_status
+
+
+@app.get("/health/detailed")
+async def health_check_detailed():
+    """Detailed health check with additional service information."""
+
+    from .services.cache.redis_manager import redis_manager
+    from .services.cache.semantic_cache import semantic_cache
+
+    health_status = await health_check()
+    if isinstance(health_status, JSONResponse):
+        health_status = health_status.body.decode()
+        import json
+
+        health_status = json.loads(health_status)
+
+    try:
+        if hasattr(redis_manager, "get_connection_info"):
+            health_status["services"]["redis"]["connection_info"] = redis_manager.get_connection_info()
+    except Exception:
+        pass
+
+    try:
+        if hasattr(semantic_cache, "get_stats"):
+            health_status["services"]["cache"]["stats"] = await semantic_cache.get_stats()
+    except Exception:
+        pass
+
+    return health_status
+
+
+@app.get("/metrics")
+async def get_metrics():
+    """Prometheus metrics endpoint."""
+    from fastapi import Response
+
+    from .utils.metrics import metrics_collector
+
+    try:
+        metrics_data = metrics_collector.get_metrics()
+        return Response(content=metrics_data, media_type="text/plain; version=0.0.4")
+    except Exception as e:
+        logger.error(f"Failed to get metrics: {e}")
+        return Response(content=f"# Error: {str(e)}", media_type="text/plain; version=0.0.4", status_code=500)
+
+
+@app.get("/metrics/json")
+async def get_metrics_json():
+    """JSON metrics endpoint."""
+    from .utils.metrics import metrics_collector
+
+    try:
+        metrics_dict = metrics_collector.get_metrics_dict()
+        return metrics_dict
+    except Exception as e:
+        logger.error(f"Failed to get metrics: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
 
 
 app.include_router(user_api.router)
 app.include_router(chat_api.router)
 app.include_router(analysis_api.router)
+app.include_router(monitoring_api.router)
 
 
 def run_uvicorn():

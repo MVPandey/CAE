@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import json
+from typing import TYPE_CHECKING
 
 from ...schema.conversation_analysis import ConversationBranch
 from ...schema.llm.message import Message
 from ...services.llm_service import LLMService
 from ...utils.logger import logger
-from ..mcts import MCTSNode
 from .config import ResponseConfig, ScoringConfig
+
+if TYPE_CHECKING:
+    from ...services.mcts.node import MCTSNode
 
 
 class ConversationAnalyzer:
@@ -18,11 +21,11 @@ class ConversationAnalyzer:
 
     async def analyze_best_path(
         self,
-        root_nodes: list[MCTSNode],
+        root_nodes: list["MCTSNode"],
         original_messages: list[Message],
         goal: str | None,
         max_tokens: int,
-    ) -> tuple[MCTSNode, int, str]:
+    ) -> tuple["MCTSNode", int, str]:
         best_root = self._select_best_node(root_nodes)
         best_idx = root_nodes.index(best_root)
 
@@ -30,7 +33,7 @@ class ConversationAnalyzer:
 
         return best_root, best_idx, analysis
 
-    def convert_to_branches(self, root_nodes: list[MCTSNode]) -> list[ConversationBranch]:
+    def convert_to_branches(self, root_nodes: list["MCTSNode"]) -> list[ConversationBranch]:
         return [
             ConversationBranch(
                 response=node.response,
@@ -46,7 +49,7 @@ class ConversationAnalyzer:
             for node in root_nodes
         ]
 
-    def _select_best_node(self, root_nodes: list[MCTSNode]) -> MCTSNode:
+    def _select_best_node(self, root_nodes: list["MCTSNode"]) -> "MCTSNode":
         total_visits = sum(node.visits for node in root_nodes)
 
         return max(
@@ -59,8 +62,8 @@ class ConversationAnalyzer:
 
     async def _generate_analysis(
         self,
-        best_node: MCTSNode,
-        all_nodes: list[MCTSNode],
+        best_node: "MCTSNode",
+        all_nodes: list["MCTSNode"],
         messages: list[Message],
         goal: str | None,
         max_tokens: int,
@@ -79,7 +82,7 @@ class ConversationAnalyzer:
             logger.error("Failed to generate analysis", exc_info=True)
             return self._get_default_analysis(best_node, all_nodes.index(best_node))
 
-    def _build_analysis_prompt(self, best_node: MCTSNode, all_nodes: list[MCTSNode], goal: str | None) -> Message:
+    def _build_analysis_prompt(self, best_node: "MCTSNode", all_nodes: list["MCTSNode"], goal: str | None) -> Message:
         goal_section = f"<conversation_goal>{goal}</conversation_goal>\n" if goal else ""
 
         options_data = [
@@ -113,7 +116,7 @@ Provide 2-3 paragraph analysis covering:
 - Potential considerations""",
         )
 
-    def _get_default_analysis(self, best_node: MCTSNode, index: int) -> str:
+    def _get_default_analysis(self, best_node: "MCTSNode", index: int) -> str:
         return (
             f"Selected response {index + 1} based on MCTS evaluation. "
             f"This response achieved a score of {best_node.avg_score:.2f} "

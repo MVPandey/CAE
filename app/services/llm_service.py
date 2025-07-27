@@ -420,3 +420,45 @@ class LLMService:
             List of ToolMessage objects with the results
         """
         return await self.tool_executor.execute_tool_calls(tool_calls)
+
+    async def _extract_json_from_response(self, response_text: str) -> dict[str, Any]:
+        """
+        Extract JSON from LLM response text.
+
+        Args:
+            response_text: Raw response text from LLM
+
+        Returns:
+            Parsed JSON dictionary
+
+        Raises:
+            LLMException: If JSON extraction fails
+        """
+        try:
+            return json.loads(response_text)
+        except json.JSONDecodeError:
+            return clean_json_response(response_text)
+
+    def _process_tool_calls(self, tool_calls: list[ToolCall], request_id: str = None) -> list[dict[str, Any]]:
+        """
+        Process tool calls into format suitable for LLM.
+
+        Args:
+            tool_calls: List of ToolCall objects
+
+        Returns:
+            List of tool call dictionaries
+        """
+        processed_calls = []
+        for tool_call in tool_calls:
+            processed_calls.append(
+                {
+                    "id": tool_call.id,
+                    "type": "function",
+                    "function": {
+                        "name": tool_call.function.name,
+                        "arguments": tool_call.function.arguments,
+                    },
+                }
+            )
+        return processed_calls

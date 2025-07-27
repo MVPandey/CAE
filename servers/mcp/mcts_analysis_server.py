@@ -21,6 +21,7 @@ from app.services.mcts import MCTSAlgorithm
 from app.utils.config import app_settings
 from app.utils.constants import RETRY_MAX_ATTEMPTS, RETRY_MAX_WAIT, RETRY_MIN_WAIT, RETRY_MULTIPLIER
 from app.utils.logger import logger
+from app.utils.metrics import metrics_collector, track_mcp_tool
 
 llm_service: LLMService | None = None
 response_generator: ResponseGenerator | None = None
@@ -97,8 +98,12 @@ def create_mcp_server(initialize_on_startup: bool = True) -> FastMCP:
         if initialize_on_startup:
             await initialize_services()
 
+        metrics_collector.initialize()
+        metrics_collector.update_mcp_sessions(1)
+
         yield
 
+        metrics_collector.update_mcp_sessions(0)
         logger.info("Shutting down MCTS MCP Server")
 
     return FastMCP(
@@ -118,6 +123,7 @@ mcp = create_mcp_server(
 
 
 @mcp.tool
+@track_mcp_tool("analyze_conversation")
 async def analyze_conversation(
     ctx: Context,
     conversation_goal: str,
