@@ -165,9 +165,9 @@ async def test_analyze_conversation_with_custom_params(mock_services):
                 Message(role="user", content="Review my code"),
                 Message(role="assistant", content="I'll review your code"),
             ],
-            3,  # num_branches
+            3,
             "get constructive criticism",
-            300,  # max_tokens
+            300,
         )
 
         assert result.data["conversation_goal"] == "get constructive criticism"

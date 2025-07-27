@@ -28,8 +28,8 @@ def sample_nodes():
     nodes = []
     for i in range(3):
         node = MCTSNode(f"Response {i}", index=i)
-        node.avg_score = 0.9 - (i * 0.1)  # 0.9, 0.8, 0.7
-        node.visits = 20 - (i * 5)  # 20, 15, 10
+        node.avg_score = 0.9 - (i * 0.1)
+        node.visits = 20 - (i * 5)
         node.simulated_reactions = [f"User reaction {i}"]
         node.sub_history = [
             {"role": "user", "content": f"User message {i}"},
@@ -72,14 +72,14 @@ class TestConversationAnalyzer:
             sample_nodes, sample_messages, goal, max_tokens
         )
 
-        assert best_node == sample_nodes[0]  # Highest scoring node
+        assert best_node == sample_nodes[0]
         assert best_idx == 0
         assert analysis == mock_response.content
 
         mock_llm_service.query_llm.assert_called_once()
         call_args = mock_llm_service.query_llm.call_args
         assert call_args.kwargs["json_response"] is False
-        assert call_args.kwargs["max_tokens"] == max_tokens * 2  # TOKEN_MULTIPLIER_ANALYSIS
+        assert call_args.kwargs["max_tokens"] == max_tokens * 2
 
     @pytest.mark.asyncio
     async def test_analyze_best_path_llm_error(self, analyzer, sample_nodes, sample_messages, mock_llm_service):
@@ -97,7 +97,7 @@ class TestConversationAnalyzer:
             assert best_node == sample_nodes[0]
             assert best_idx == 0
             assert "Selected response 1" in analysis
-            assert "0.90" in analysis  # Score should be in analysis
+            assert "0.90" in analysis
 
             mock_logger.error.assert_called_once()
 
@@ -117,7 +117,7 @@ class TestConversationAnalyzer:
             assert branch.goal_metrics == sample_nodes[i].goal_metrics
             assert branch.visits == sample_nodes[i].visits
             assert branch.parent_index is None
-            assert branch.children_indices == [0, 1]  # Each node has 2 children
+            assert branch.children_indices == [0, 1]
 
     def test_select_best_node_by_score_and_visits(self, analyzer, sample_nodes):
         """Test best node selection considering both score and visits."""
@@ -125,7 +125,7 @@ class TestConversationAnalyzer:
         sample_nodes[0].visits = 10
 
         sample_nodes[1].avg_score = 0.75
-        sample_nodes[1].visits = 25  # More visits but lower score
+        sample_nodes[1].visits = 25
 
         sample_nodes[2].avg_score = 0.7
         sample_nodes[2].visits = 5
@@ -179,8 +179,8 @@ class TestConversationAnalyzer:
 
         analysis = analyzer._get_default_analysis(best_node, index)
 
-        assert "Selected response 2" in analysis  # 1-indexed
-        assert "0.80" in analysis  # Score formatted to 2 decimals
+        assert "Selected response 2" in analysis
+        assert "0.80" in analysis
         assert str(best_node.visits) in analysis
 
     def test_build_analysis_prompt_with_empty_metrics(self, analyzer):
@@ -188,7 +188,7 @@ class TestConversationAnalyzer:
         nodes = [MCTSNode("Response 1")]
         nodes[0].avg_score = 0.5
         nodes[0].visits = 1
-        nodes[0].general_metrics = {}  # Empty metrics
+        nodes[0].general_metrics = {}
 
         prompt = analyzer._build_analysis_prompt(nodes[0], nodes, "Test goal")
 
@@ -201,8 +201,8 @@ class TestConversationAnalyzer:
         nodes = []
         for i in range(3):
             node = MCTSNode(f"Response {i}", index=i)
-            node.avg_score = 0.8  # Same score
-            node.visits = 10 + i  # Different visits
+            node.avg_score = 0.8
+            node.visits = 10 + i
             node.general_metrics = {"clarity": 0.8}
             node.goal_metrics = {}
             nodes.append(node)
@@ -253,5 +253,5 @@ class TestConversationAnalyzer:
         call_args = mock_llm_service.query_llm.call_args
         messages = call_args.kwargs["messages"]
 
-        assert messages[0].role == "system"  # Analysis prompt
-        assert messages[1:] == sample_messages  # Original messages follow
+        assert messages[0].role == "system"
+        assert messages[1:] == sample_messages

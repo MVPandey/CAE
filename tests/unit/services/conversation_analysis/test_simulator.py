@@ -62,7 +62,7 @@ class TestConversationSimulator:
         result = await simulator.simulate_conversation(sample_messages, depth, goal, max_tokens)
 
         assert result == expected_simulation
-        assert len(result["simulation"]) == 6  # 3 exchanges * 2 messages each
+        assert len(result["simulation"]) == 6
         assert len(result["user_reactions"]) == 3
 
         mock_llm_service.query_llm.assert_called_once()
@@ -127,7 +127,7 @@ class TestConversationSimulator:
         result = await simulator.simulate_conversation(sample_messages, depth, None, max_tokens)
 
         assert result["simulation"] == partial_response["simulation"]
-        assert result["user_reactions"] == []  # Default empty list
+        assert result["user_reactions"] == []
 
     @pytest.mark.asyncio
     async def test_simulate_conversation_missing_simulation_key(self, simulator, sample_messages, mock_llm_service):

@@ -38,7 +38,7 @@ if __name__ == "__main__":
 
     from app.utils.logger import logger
 
-    logger.remove()  # Remove default handler
+    logger.remove()
     logger.add(
         sys.stderr,
         level=args.log_level,

@@ -58,7 +58,7 @@ class TestCosineSimilarityStrategy:
         results = await strategy.find_similar(query_embedding, candidates, threshold=0.8, max_results=2)
 
         assert len(results) == 2
-        assert results[0] == ("key3", 0.95)  # Highest similarity first
+        assert results[0] == ("key3", 0.95)
         assert results[1] == ("key1", 0.9)
 
     @pytest.mark.asyncio
@@ -85,7 +85,7 @@ class TestCosineSimilarityStrategy:
         """Test embedding normalization."""
         strategy = CosineSimilarityStrategy()
 
-        embedding = np.array([3.0, 4.0])  # Norm = 5
+        embedding = np.array([3.0, 4.0])
         normalized = strategy.preprocess_embedding(embedding)
 
         expected = np.array([0.6, 0.8])
@@ -129,15 +129,15 @@ class TestEuclideanDistanceStrategy:
 
         query_embedding = np.array([0.0, 0.0, 0.0])
         candidates = [
-            ("key1", np.array([1.0, 0.0, 0.0])),  # Distance = 1
-            ("key2", np.array([0.0, 0.5, 0.0])),  # Distance = 0.5
-            ("key3", np.array([3.0, 4.0, 0.0])),  # Distance = 5
+            ("key1", np.array([1.0, 0.0, 0.0])),
+            ("key2", np.array([0.0, 0.5, 0.0])),
+            ("key3", np.array([3.0, 4.0, 0.0])),
         ]
 
         results = await strategy.find_similar(query_embedding, candidates, threshold=0.1, max_results=3)
 
-        assert len(results) == 2  # key3 should be below threshold
-        assert results[0][0] == "key2"  # Closest
+        assert len(results) == 2
+        assert results[0][0] == "key2"
         assert results[1][0] == "key1"
 
     def test_preprocess_embedding(self):
@@ -172,9 +172,9 @@ class TestDotProductSimilarityStrategy:
 
         query_embedding = np.array([1.0, 0.0, 0.0])
         candidates = [
-            ("key1", np.array([0.5, 0.5, 0.0])),  # Dot product = 0.5
-            ("key2", np.array([1.0, 0.0, 0.0])),  # Dot product = 1.0
-            ("key3", np.array([0.0, 1.0, 0.0])),  # Dot product = 0.0
+            ("key1", np.array([0.5, 0.5, 0.0])),
+            ("key2", np.array([1.0, 0.0, 0.0])),
+            ("key3", np.array([0.0, 1.0, 0.0])),
         ]
 
         results = await strategy.find_similar(query_embedding, candidates, threshold=0.4, max_results=2)
@@ -187,7 +187,7 @@ class TestDotProductSimilarityStrategy:
         """Test embedding normalization for dot product."""
         strategy = DotProductSimilarityStrategy()
 
-        embedding = np.array([3.0, 4.0])  # Norm = 5
+        embedding = np.array([3.0, 4.0])
         normalized = strategy.preprocess_embedding(embedding)
 
         expected = np.array([0.6, 0.8])

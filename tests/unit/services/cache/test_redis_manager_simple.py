@@ -52,7 +52,7 @@ class TestRedisManagerBatchMethods:
     @patch("app.services.cache.redis_manager.redis")
     async def test_batch_set_success(self, mock_redis):
         """Test successful batch set."""
-        mock_client = MagicMock()  # Use MagicMock for client
+        mock_client = MagicMock()
         mock_pipeline = MagicMock()
         mock_pipeline.execute = AsyncMock(return_value=[True, True])
 
@@ -155,7 +155,7 @@ class TestRedisManagerBatchMethods:
         """Test checking existence of multiple keys."""
         mock_client = AsyncMock()
         mock_redis.from_url.return_value = mock_client
-        mock_client.exists.return_value = 2  # 2 keys exist
+        mock_client.exists.return_value = 2
         mock_client.__aenter__.return_value = mock_client
         mock_client.__aexit__.return_value = None
 

@@ -163,7 +163,7 @@ class TestConversationScorer:
 
         validated = scorer._validate_scoring_result(result)
 
-        assert validated == result  # Should not modify complete result
+        assert validated == result
 
     def test_validate_scoring_result_missing_general_metrics(self, scorer):
         """Test validation when general_metrics is missing."""

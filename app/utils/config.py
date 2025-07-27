@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -27,7 +25,7 @@ class Config(BaseSettings):
     # ================================================================
     # OPTIONAL: Embedding configuration (enables semantic caching when present)
     # ================================================================
-    EMBEDDING_MODEL_API_KEY: Optional[str] = Field(
+    EMBEDDING_MODEL_API_KEY: str | None = Field(
         default=None, description="Embedding model API key (optional - enables semantic caching)"
     )
     EMBEDDING_MODEL_BASE_URL: str = Field(
@@ -49,7 +47,7 @@ class Config(BaseSettings):
     # ================================================================
     REDIS_HOST: str = Field(default="redis", description="Redis host")
     REDIS_PORT: int = Field(default=6379, description="Redis port")
-    REDIS_PASSWORD: Optional[str] = Field(default=None, description="Redis password")
+    REDIS_PASSWORD: str | None = Field(default=None, description="Redis password")
     REDIS_DB: int = Field(default=0, description="Redis database number")
     REDIS_POOL_SIZE: int = Field(default=20, description="Redis connection pool size")
     REDIS_MAX_CONNECTIONS: int = Field(default=50, description="Redis max connections")
@@ -74,7 +72,7 @@ class Config(BaseSettings):
     enable_semantic_cache: bool = Field(default=False, description="Semantic caching enabled")
     enable_prometheus_metrics: bool = Field(default=True, description="Prometheus metrics enabled")
 
-    def model_post_init(self, __context) -> None:
+    def model_post_init(self, __context: dict | None) -> None:
         """
         Derive feature flags based on presence/override rules
         without mutating env-state.

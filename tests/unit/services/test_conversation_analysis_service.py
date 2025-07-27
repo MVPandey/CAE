@@ -114,10 +114,10 @@ class TestConversationAnalysisService:
             mcts_stats = {
                 "total_iterations": sample_request.mcts_iterations,
                 "nodes_created": sample_request.num_branches,
-                "nodes_evaluated": 3 * 10,  # Assuming each node is evaluated in every iteration
-                "pruned_branches": 3,  # Example: one branch pruned per node
-                "parallel_evaluations": 3,  # Example: evaluations performed in parallel for each node
-                "average_depth_explored": 10 / 3,  # Example: average depth based on iterations and nodes
+                "nodes_evaluated": 3 * 10,
+                "pruned_branches": 3,
+                "parallel_evaluations": 3,
+                "average_depth_explored": 10 / 3,
             }
             service.mcts.run = AsyncMock(return_value=(sample_mcts_nodes, mcts_stats))
 
@@ -184,7 +184,7 @@ class TestConversationAnalysisService:
 
         values = [1.0, 2.0, 3.0, 4.0, 5.0]
         variance = service._calculate_variance(values)
-        assert variance == 2.0  # Expected variance
+        assert variance == 2.0
 
         assert service._calculate_variance([3.0, 3.0, 3.0]) == 0.0
 

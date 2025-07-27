@@ -51,7 +51,6 @@ class TestLifespan:
                 pass
 
         assert str(exc_info.value) == "DB Error"
-        # Verify feature configuration is logged first
         assert any(call.args[0].startswith("Feature configuration:") for call in mock_logger.info.call_args_list)
 
 
@@ -103,7 +102,7 @@ class TestMiddleware:
             return mock_response
 
         with patch("app.main.time.time") as mock_time:
-            mock_time.side_effect = [1.0, 2.5]  # Start and end time
+            mock_time.side_effect = [1.0, 2.5]
 
             result = await log_requests(mock_request, mock_call_next)
 

@@ -134,7 +134,7 @@ class TestMCTSNode:
 
         child2 = MCTSNode("Child 2")
         child2.visits = 10
-        child2.avg_score = 0.85  # Higher score but fewer visits
+        child2.avg_score = 0.85
 
         child3 = MCTSNode("Child 3")
         child3.visits = 30
@@ -144,7 +144,7 @@ class TestMCTSNode:
         parent.add_child(child2)
         parent.add_child(child3)
 
-        c = 1.414  # Default exploration constant
+        c = 1.414
 
         0.8 + c * math.sqrt(2 * math.log(100) / 20)
         0.85 + c * math.sqrt(2 * math.log(100) / 10)

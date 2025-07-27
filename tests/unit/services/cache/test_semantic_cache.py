@@ -72,7 +72,7 @@ class TestSemanticCache:
         hash2 = semantic_cache._generate_conversation_hash(sample_messages)
 
         assert hash1 == hash2
-        assert len(hash1) == 16  # Truncated to 16 chars
+        assert len(hash1) == 16
 
         different_messages = [Message(role="user", content="Different content")]
         hash3 = semantic_cache._generate_conversation_hash(different_messages)
@@ -128,7 +128,7 @@ class TestSemanticCache:
             results = await semantic_cache._find_similar_entries(embedding)
 
         assert len(results) == 2
-        assert results[0] == ("hash1", 0.95)  # Higher similarity first
+        assert results[0] == ("hash1", 0.95)
         assert results[1] == ("hash2", 0.90)
 
     async def test_find_similar_entries_below_threshold(
@@ -223,7 +223,7 @@ class TestSemanticCache:
 
         async def mock_scan_keys(pattern, count=100):
             return
-            yield  # This line is never reached, creating an empty async generator
+            yield
 
         mock_redis_manager.scan_keys = mock_scan_keys
 
@@ -269,7 +269,7 @@ class TestSemanticCache:
         assert success is True
         assert semantic_cache._stats["stores"] == 1
 
-        assert mock_redis_manager.set_json.call_count == 4  # Main, simulation, score, index
+        assert mock_redis_manager.set_json.call_count == 4
 
     async def test_store_with_metadata(
         self, semantic_cache, mock_redis_manager, mock_embedding_service, sample_messages
@@ -332,7 +332,7 @@ class TestSemanticCache:
         success = await semantic_cache.invalidate(sample_messages)
 
         assert success is True
-        assert mock_redis_manager.delete.call_count == 4  # Main, simulation, score, index
+        assert mock_redis_manager.delete.call_count == 4
 
     async def test_clear_all(self, semantic_cache, mock_redis_manager):
         """Test clearing all cache entries."""
@@ -392,7 +392,7 @@ class TestSemanticCache:
 
         async def mock_scan_keys(pattern, count=100):
             return
-            yield  # This line is never reached, creating an empty async generator
+            yield
 
         mock_redis_manager.scan_keys = mock_scan_keys
 
@@ -429,7 +429,7 @@ class TestSemanticCache:
         with patch("app.services.embeddings.embedding_service.embedding_service", mock_embedding_service):
             count = await semantic_cache.warm_cache(conversation_patterns, mock_generator)
 
-        assert count == 0  # Nothing warmed because already cached
+        assert count == 0
 
     async def test_warm_cache_generator_failure(self, semantic_cache, mock_redis_manager, mock_embedding_service):
         """Test cache warming handles generator failures."""
@@ -441,7 +441,7 @@ class TestSemanticCache:
 
         async def mock_scan_keys(pattern, count=100):
             return
-            yield  # This line is never reached, creating an empty async generator
+            yield
 
         mock_redis_manager.scan_keys = mock_scan_keys
 
@@ -451,4 +451,4 @@ class TestSemanticCache:
         with patch("app.services.embeddings.embedding_service.embedding_service", mock_embedding_service):
             count = await semantic_cache.warm_cache(conversation_patterns, mock_generator)
 
-        assert count == 0  # Nothing warmed due to error
+        assert count == 0

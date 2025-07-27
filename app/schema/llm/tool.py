@@ -50,7 +50,7 @@ class ToolSchema(BaseModel):
     function: ToolFunction = Field(..., description="The function definition")
 
     model_config = ConfigDict(
-        frozen=True,  # Makes instances immutable
+        frozen=True,
         json_schema_extra={
             "example": {
                 "type": "function",

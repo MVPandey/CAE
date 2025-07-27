@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 os.environ["ENVIRONMENT"] = "test"
 os.environ["DATABASE_URL"] = "postgresql://test:test@localhost:5432/test_db"
 os.environ["OPENAI_API_KEY"] = "test-api-key"
+os.environ["DISABLE_PROMETHEUS_METRICS"] = "false"
 
 TEST_CONSTANTS_CLASS_NAME = "TestConstants"
 

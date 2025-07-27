@@ -102,7 +102,7 @@ class RedisManager:
         """Periodic health check for Redis connection."""
         while True:
             try:
-                await asyncio.sleep(30)  # Check every 30 seconds
+                await asyncio.sleep(30)
                 await self._client.ping()
                 if not self._is_healthy:
                     logger.info("Redis connection restored")
@@ -417,10 +417,10 @@ class RedisManager:
                         return True
 
                     if blocking_timeout > 0:
-                        max_attempts = 3  # To match test expectations
+                        max_attempts = 3
                         attempt = 0
-                        while attempt < max_attempts - 1:  # -1 because we already tried once
-                            await asyncio.sleep(0.1)  # Small delay between attempts
+                        while attempt < max_attempts - 1:
+                            await asyncio.sleep(0.1)
                             acquired = await client.set(
                                 lock_key,
                                 identifier,

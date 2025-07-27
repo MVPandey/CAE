@@ -21,7 +21,7 @@ class TestEvictionFactorySimple:
     def test_create_hybrid_with_all_options(self):
         """Test creating hybrid policy with all configuration options."""
         ttl_kwargs = {"default_ttl_seconds": 3600}
-        lru_kwargs = {}  # LRU doesn't take constructor args
+        lru_kwargs = {}
 
         policy = EvictionPolicyFactory.create("hybrid", ttl_kwargs=ttl_kwargs, lru_kwargs=lru_kwargs)
 

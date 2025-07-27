@@ -25,8 +25,7 @@ async def lifespan(app: FastAPI):
     Handles startup and shutdown events for the application.
     """
     logger.info("Starting up...")
-    
-    # Log feature summary
+
     feature_summary = app_settings.get_feature_summary()
     logger.info(f"Feature configuration: {feature_summary}")
 
@@ -36,18 +35,14 @@ async def lifespan(app: FastAPI):
     await redis_manager.initialize()
     logger.info("Redis cache initialized.")
 
-    # Conditionally initialize semantic cache
     if app_settings.enable_semantic_cache:
         try:
-            from app.services.cache.semantic_cache import semantic_cache
-            # semantic_cache will auto-initialize when imported if embedding keys are available
             logger.info("✅ Semantic caching enabled - embeddings available")
         except Exception as e:
             logger.warning(f"⚠️ Semantic caching disabled - initialization failed: {e}")
     else:
         logger.info("ℹ️ Semantic caching disabled - EMBEDDING_MODEL_API_KEY not provided")
 
-    # Conditionally initialize metrics collector
     if app_settings.enable_prometheus_metrics:
         metrics_collector.initialize()
         logger.info("✅ Prometheus metrics enabled")
@@ -198,7 +193,6 @@ async def health_check():
         health_status["services"]["redis"] = {"status": "unhealthy", "error": str(e)}
         health_status["status"] = "unhealthy"
 
-    # Only check semantic cache if enabled
     if app_settings.enable_semantic_cache:
         try:
             from .services.cache.semantic_cache import semantic_cache
@@ -238,7 +232,6 @@ async def health_check_detailed():
     except Exception:
         pass
 
-    # Only get semantic cache stats if enabled
     if app_settings.enable_semantic_cache:
         try:
             from .services.cache.semantic_cache import semantic_cache
@@ -259,7 +252,7 @@ async def get_metrics():
 
     if not app_settings.enable_prometheus_metrics:
         raise HTTPException(
-            status_code=404, 
+            status_code=404,
             detail="Metrics disabled. Set DISABLE_PROMETHEUS_METRICS=false to enable."
         )
 
@@ -275,12 +268,12 @@ async def get_metrics():
 async def get_metrics_json():
     """JSON metrics endpoint with conditional response."""
     from fastapi import HTTPException
-    
+
     from .utils.metrics import metrics_collector
 
     if not app_settings.enable_prometheus_metrics:
         raise HTTPException(
-            status_code=404, 
+            status_code=404,
             detail="Metrics disabled. Set DISABLE_PROMETHEUS_METRICS=false to enable."
         )
 

@@ -39,7 +39,7 @@ class ConversationAnalysisService:
             self.response_generator,
             self.simulator,
             self.scorer,
-            use_cache=True,  # Enable semantic caching
+            use_cache=True,
         )
 
     async def analyze_conversation(self, request: ConversationAnalysisRequest) -> ConversationAnalysisResponse:

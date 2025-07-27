@@ -165,7 +165,7 @@ class MCTSAlgorithm:
         node.general_metrics = score_data["general_metrics"]
         node.goal_metrics = score_data.get("goal_metrics", {})
 
-        if self.use_cache and node.response:  # Don't cache root node
+        if self.use_cache and node.response:
             success = await semantic_cache.store(
                 extended_messages,
                 node.response,
@@ -191,7 +191,7 @@ class MCTSAlgorithm:
             current = current.parent
 
         path.reverse()
-        path = path[1:]  # Remove empty root
+        path = path[1:]
 
         result = base_messages.copy()
         for response in path:

@@ -141,7 +141,7 @@ class TestFormatRecord:
             extra={
                 "user_id": "123",
                 "request_id": "abc-def",
-                "_internal": "hidden",  # Should be filtered
+                "_internal": "hidden",
             },
             exception=None,
         )
@@ -150,7 +150,7 @@ class TestFormatRecord:
 
         assert "<blue>user_id</blue>=<yellow>123</yellow>" in result
         assert "<blue>request_id</blue>=<yellow>abc-def</yellow>" in result
-        assert "_internal" not in result  # Hidden fields should be filtered
+        assert "_internal" not in result
 
     def test_format_record_truncates_long_values(self):
         """Test that long values are truncated."""
@@ -187,7 +187,7 @@ class TestFormatRecord:
 
         result = format_record(record)
 
-        assert "{{key: value}}" in result  # Braces should be escaped
+        assert "{{key: value}}" in result
 
 
 class TestFormatRecordJson:
@@ -237,7 +237,7 @@ class TestFormatRecordJson:
             extra={
                 "user_id": "123",
                 "request_id": "abc-def",
-                "_internal": "hidden",  # Should be filtered
+                "_internal": "hidden",
             },
             exception=None,
         )
@@ -247,7 +247,7 @@ class TestFormatRecordJson:
 
         assert parsed["user_id"] == "123"
         assert parsed["request_id"] == "abc-def"
-        assert "_internal" not in parsed  # Hidden fields should be filtered
+        assert "_internal" not in parsed
 
     def test_format_record_json_with_exception(self):
         """Test JSON formatting with exception info."""

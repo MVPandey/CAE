@@ -73,8 +73,8 @@ class TestEmbeddingServiceEdgeCases:
 
         mock_redis.get_json = AsyncMock(
             side_effect=[
-                {"embedding": [1.0, 2.0, 3.0]},  # First text cached
-                None,  # Second text not cached
+                {"embedding": [1.0, 2.0, 3.0]},
+                None,
             ]
         )
         mock_redis.set_json = AsyncMock(return_value=True)

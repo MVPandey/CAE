@@ -37,7 +37,7 @@ class TestPROMPTS:
         """
         dedented = dedent(test_text)
         dedented = dedented.strip()
-        assert not dedented.startswith(" ")  # Check indentation is removed
+        assert not dedented.startswith(" ")
         assert "This is a" in dedented
 
     def test_prompts_immutability(self):

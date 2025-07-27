@@ -68,7 +68,7 @@ class TestCreateUser:
         """Test user creation with name exceeding max length."""
         response = await async_client.post(
             "/users/",
-            json={"name": "a" * 256},  # Exceeds max_length=255
+            json={"name": "a" * 256},
         )
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
