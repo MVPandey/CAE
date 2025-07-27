@@ -20,6 +20,10 @@ asyncpg = "^0.30.0"
 tenacity = "^9.1.2"
 greenlet = "^3.2.3"
 fastmcp = ">=2.10.6"
+redis = "^5.2.1"
+hiredis = "^3.0.0"
+numpy = "^2.0.0"
+prometheus-client = "^0.20.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.8.6"

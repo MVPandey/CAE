@@ -35,7 +35,12 @@ class ConversationAnalysisService:
         self.scorer = ConversationScorer(self.llm_service)
         self.analyzer = ConversationAnalyzer(self.llm_service)
 
-        self.mcts = MCTSAlgorithm(self.response_generator, self.simulator, self.scorer)
+        self.mcts = MCTSAlgorithm(
+            self.response_generator,
+            self.simulator,
+            self.scorer,
+            use_cache=True,  # Enable semantic caching
+        )
 
     async def analyze_conversation(self, request: ConversationAnalysisRequest) -> ConversationAnalysisResponse:
         start_time = time.time()
