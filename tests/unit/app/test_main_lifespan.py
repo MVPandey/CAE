@@ -5,8 +5,6 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 
-
-
 class TestAppLifespan:
     """Test app lifespan handling."""
 

@@ -5,8 +5,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 
-
-
 class TestMonitoringEndpoints:
     """Test monitoring endpoints with proper async handling."""
 
