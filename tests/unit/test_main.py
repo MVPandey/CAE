@@ -51,7 +51,8 @@ class TestLifespan:
                 pass
 
         assert str(exc_info.value) == "DB Error"
-        mock_logger.info.assert_called_with("Starting up...")
+        # Verify feature configuration is logged first
+        assert any(call.args[0].startswith("Feature configuration:") for call in mock_logger.info.call_args_list)
 
 
 class TestApp:

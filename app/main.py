@@ -14,6 +14,7 @@ from app.api import monitoring as monitoring_api
 from app.api import user as user_api
 from app.db.chat import db
 from app.services.cache.redis_manager import redis_manager
+from app.utils.config import app_settings
 from app.utils.logger import logger
 from app.utils.metrics import metrics_collector
 
@@ -24,6 +25,10 @@ async def lifespan(app: FastAPI):
     Handles startup and shutdown events for the application.
     """
     logger.info("Starting up...")
+    
+    # Log feature summary
+    feature_summary = app_settings.get_feature_summary()
+    logger.info(f"Feature configuration: {feature_summary}")
 
     await db.create_db_and_tables()
     logger.info("Database tables created or already exist.")
@@ -31,8 +36,23 @@ async def lifespan(app: FastAPI):
     await redis_manager.initialize()
     logger.info("Redis cache initialized.")
 
-    metrics_collector.initialize()
-    logger.info("Metrics collector initialized.")
+    # Conditionally initialize semantic cache
+    if app_settings.enable_semantic_cache:
+        try:
+            from app.services.cache.semantic_cache import semantic_cache
+            # semantic_cache will auto-initialize when imported if embedding keys are available
+            logger.info("✅ Semantic caching enabled - embeddings available")
+        except Exception as e:
+            logger.warning(f"⚠️ Semantic caching disabled - initialization failed: {e}")
+    else:
+        logger.info("ℹ️ Semantic caching disabled - EMBEDDING_MODEL_API_KEY not provided")
+
+    # Conditionally initialize metrics collector
+    if app_settings.enable_prometheus_metrics:
+        metrics_collector.initialize()
+        logger.info("✅ Prometheus metrics enabled")
+    else:
+        logger.info("ℹ️ Prometheus metrics disabled (DISABLE_PROMETHEUS_METRICS=true)")
 
     yield
 
@@ -160,13 +180,12 @@ async def health_check():
     import time
 
     from .services.cache.redis_manager import redis_manager
-    from .services.cache.semantic_cache import semantic_cache
-    from .utils.config import app_settings
 
     health_status = {
         "status": "healthy",
         "timestamp": int(time.time()),
-        "version": app_settings.VERSION if hasattr(app_settings, "VERSION") else "unknown",
+        "version": "0.0.1",
+        "features": app_settings.get_feature_summary(),
         "services": {},
     }
 
@@ -179,15 +198,20 @@ async def health_check():
         health_status["services"]["redis"] = {"status": "unhealthy", "error": str(e)}
         health_status["status"] = "unhealthy"
 
-    try:
-        cache_healthy = await semantic_cache.health_check()
-        health_status["services"]["cache"] = {"status": "healthy" if cache_healthy else "unhealthy"}
-        if not cache_healthy:
+    # Only check semantic cache if enabled
+    if app_settings.enable_semantic_cache:
+        try:
+            from .services.cache.semantic_cache import semantic_cache
+            cache_healthy = await semantic_cache.health_check()
+            health_status["services"]["cache"] = {"status": "healthy" if cache_healthy else "unhealthy"}
+            if not cache_healthy:
+                health_status["status"] = "unhealthy"
+                health_status["services"]["cache"]["error"] = "Cache health check failed"
+        except Exception as e:
+            health_status["services"]["cache"] = {"status": "unhealthy", "error": str(e)}
             health_status["status"] = "unhealthy"
-            health_status["services"]["cache"]["error"] = "Cache health check failed"
-    except Exception as e:
-        health_status["services"]["cache"] = {"status": "unhealthy", "error": str(e)}
-        health_status["status"] = "unhealthy"
+    else:
+        health_status["services"]["cache"] = {"status": "disabled", "reason": "EMBEDDING_MODEL_API_KEY not provided"}
 
     if health_status["status"] == "unhealthy":
         return JSONResponse(status_code=503, content=health_status)
@@ -200,7 +224,6 @@ async def health_check_detailed():
     """Detailed health check with additional service information."""
 
     from .services.cache.redis_manager import redis_manager
-    from .services.cache.semantic_cache import semantic_cache
 
     health_status = await health_check()
     if isinstance(health_status, JSONResponse):
@@ -215,21 +238,30 @@ async def health_check_detailed():
     except Exception:
         pass
 
-    try:
-        if hasattr(semantic_cache, "get_stats"):
-            health_status["services"]["cache"]["stats"] = await semantic_cache.get_stats()
-    except Exception:
-        pass
+    # Only get semantic cache stats if enabled
+    if app_settings.enable_semantic_cache:
+        try:
+            from .services.cache.semantic_cache import semantic_cache
+            if hasattr(semantic_cache, "get_stats"):
+                health_status["services"]["cache"]["stats"] = await semantic_cache.get_stats()
+        except Exception:
+            pass
 
     return health_status
 
 
 @app.get("/metrics")
 async def get_metrics():
-    """Prometheus metrics endpoint."""
-    from fastapi import Response
+    """Prometheus metrics endpoint with conditional response."""
+    from fastapi import HTTPException, Response
 
     from .utils.metrics import metrics_collector
+
+    if not app_settings.enable_prometheus_metrics:
+        raise HTTPException(
+            status_code=404, 
+            detail="Metrics disabled. Set DISABLE_PROMETHEUS_METRICS=false to enable."
+        )
 
     try:
         metrics_data = metrics_collector.get_metrics()
@@ -241,8 +273,16 @@ async def get_metrics():
 
 @app.get("/metrics/json")
 async def get_metrics_json():
-    """JSON metrics endpoint."""
+    """JSON metrics endpoint with conditional response."""
+    from fastapi import HTTPException
+    
     from .utils.metrics import metrics_collector
+
+    if not app_settings.enable_prometheus_metrics:
+        raise HTTPException(
+            status_code=404, 
+            detail="Metrics disabled. Set DISABLE_PROMETHEUS_METRICS=false to enable."
+        )
 
     try:
         metrics_dict = metrics_collector.get_metrics_dict()
