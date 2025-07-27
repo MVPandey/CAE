@@ -167,7 +167,7 @@ class TestToolExecutor:
 
         result_with_dump = MagicMock()
         result_with_dump.model_dump.return_value = {"type": "model_dump"}
-        del result_with_dump.json  # Ensure json method doesn't exist
+        del result_with_dump.json
 
         async def tool_dump(**kwargs):
             return result_with_dump
@@ -244,8 +244,8 @@ class TestToolExecutor:
     def test_create_error_message_missing_attributes(self, tool_executor):
         """Test _create_error_message with missing attributes."""
         broken_call = MagicMock()
-        del broken_call.id  # Remove id attribute
-        del broken_call.function  # Remove function attribute
+        del broken_call.id
+        del broken_call.function
 
         error = Exception("Error")
 
@@ -264,7 +264,7 @@ class TestToolExecutor:
         """Test _preview_content with long content."""
         content = "x" * (LOG_CONTENT_PREVIEW_LENGTH + 50)
         preview = tool_executor._preview_content(content)
-        assert len(preview) == LOG_CONTENT_PREVIEW_LENGTH + 3  # +3 for "..."
+        assert len(preview) == LOG_CONTENT_PREVIEW_LENGTH + 3
         assert preview.endswith("...")
         assert preview.startswith("x" * LOG_CONTENT_PREVIEW_LENGTH)
 
@@ -273,7 +273,7 @@ class TestToolExecutor:
         content = "This is a longer content that should be truncated"
         preview = tool_executor._preview_content(content, max_length=10)
         assert preview == "This is a ..."
-        assert len(preview) == 13  # 10 + 3 for "..."
+        assert len(preview) == 13
 
     @pytest.mark.asyncio
     @patch("app.services.llm.tool_executor.logger")

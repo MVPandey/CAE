@@ -22,7 +22,7 @@ class TestRedisManagerPipeline:
     @patch("app.services.cache.redis_manager.redis")
     async def test_pipeline_success(self, mock_redis):
         """Test successful pipeline operations."""
-        mock_client = MagicMock()  # Use MagicMock for client since pipeline() is sync
+        mock_client = MagicMock()
         mock_pipeline = MagicMock()
         mock_pipeline.execute = AsyncMock(return_value=[True, b"value1", 1])
 
@@ -115,7 +115,7 @@ class TestRedisManagerLocking:
         """Test successful lock acquisition."""
         mock_client = AsyncMock()
         mock_redis.from_url.return_value = mock_client
-        mock_client.set.return_value = True  # SETNX returns True when lock acquired
+        mock_client.set.return_value = True
 
         manager = RedisManager()
         await manager.initialize()
@@ -128,9 +128,9 @@ class TestRedisManagerLocking:
         mock_client.set.assert_called_once()
 
         call_args = mock_client.set.call_args
-        assert call_args[0][0] == "lock:test_lock"  # Key
-        assert "nx" in call_args[1] and call_args[1]["nx"] is True  # SETNX
-        assert "ex" in call_args[1] and call_args[1]["ex"] == 10  # Expiry
+        assert call_args[0][0] == "lock:test_lock"
+        assert "nx" in call_args[1] and call_args[1]["nx"] is True
+        assert "ex" in call_args[1] and call_args[1]["ex"] == 10
 
     @pytest.mark.asyncio
     @patch("app.services.cache.redis_manager.redis")
@@ -138,7 +138,7 @@ class TestRedisManagerLocking:
         """Test lock acquisition when lock is already held."""
         mock_client = AsyncMock()
         mock_redis.from_url.return_value = mock_client
-        mock_client.set.return_value = False  # SETNX returns False when lock exists
+        mock_client.set.return_value = False
 
         manager = RedisManager()
         await manager.initialize()
@@ -168,7 +168,7 @@ class TestRedisManagerLocking:
 
         assert result is True
         assert mock_client.set.call_count == 3
-        assert mock_sleep.call_count == 2  # Sleep between attempts
+        assert mock_sleep.call_count == 2
 
     @pytest.mark.asyncio
     @patch("app.services.cache.redis_manager.redis")
@@ -177,7 +177,7 @@ class TestRedisManagerLocking:
         mock_client = AsyncMock()
         mock_redis.from_url.return_value = mock_client
         mock_client.get.return_value = b"lock_id_123"
-        mock_client.eval.return_value = 1  # Lua script returns 1 on success
+        mock_client.eval.return_value = 1
 
         manager = RedisManager()
         await manager.initialize()
@@ -196,7 +196,7 @@ class TestRedisManagerLocking:
         mock_client = AsyncMock()
         mock_redis.from_url.return_value = mock_client
         mock_client.get.return_value = b"different_lock_id"
-        mock_client.eval.return_value = 0  # Lua script returns 0 when not owner
+        mock_client.eval.return_value = 0
 
         manager = RedisManager()
         await manager.initialize()
@@ -251,7 +251,7 @@ class TestRedisManagerBatchOperations:
     @patch("app.services.cache.redis_manager.redis")
     async def test_batch_get(self, mock_redis):
         """Test batch get operation."""
-        mock_client = MagicMock()  # Use MagicMock for client
+        mock_client = MagicMock()
         mock_pipeline = MagicMock()
         mock_pipeline.execute = AsyncMock(return_value=["value1", None, "value3"])
 
@@ -275,7 +275,7 @@ class TestRedisManagerBatchOperations:
     @patch("app.services.cache.redis_manager.redis")
     async def test_batch_set_with_pipeline(self, mock_redis):
         """Test batch set using pipeline."""
-        mock_client = MagicMock()  # Use MagicMock for client
+        mock_client = MagicMock()
         mock_pipeline = MagicMock()
         mock_pipeline.execute = AsyncMock(return_value=[True, True, True])
 
@@ -300,7 +300,7 @@ class TestRedisManagerBatchOperations:
         """Test batch delete operation."""
         mock_client = AsyncMock()
         mock_redis.from_url.return_value = mock_client
-        mock_client.delete.return_value = 2  # Number of keys deleted
+        mock_client.delete.return_value = 2
 
         manager = RedisManager()
         await manager.initialize()

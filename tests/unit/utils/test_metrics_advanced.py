@@ -60,10 +60,10 @@ class TestMetricsCollectorEdgeCases:
 
         samples = []
         for name, value in [
-            ("request_duration_bucket", 10),  # Should be excluded
-            ("request_duration_count", 100),  # Should be included
-            ("request_duration_sum", 250.5),  # Should be included
-            ("request_duration_created", 123),  # Should be excluded
+            ("request_duration_bucket", 10),
+            ("request_duration_count", 100),
+            ("request_duration_sum", 250.5),
+            ("request_duration_created", 123),
         ]:
             sample = MagicMock()
             sample.name = name
@@ -95,7 +95,7 @@ class TestMetricsCollectorEdgeCases:
         for name, value in [
             ("response_time_count", 50),
             ("response_time_sum", 125.0),
-            ("response_time", 2.5),  # quantile sample
+            ("response_time", 2.5),
         ]:
             sample = MagicMock()
             sample.name = name
@@ -122,7 +122,7 @@ class TestMetricsCollectorEdgeCases:
         mock_metric.type = "counter"
         mock_sample = MagicMock()
         mock_sample.name = "simple_counter"
-        mock_sample.labels = {}  # No labels
+        mock_sample.labels = {}
         mock_sample.value = 42.0
         mock_metric.samples = [mock_sample]
 

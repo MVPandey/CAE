@@ -368,7 +368,7 @@ class TestChatFunctions:
 
         await delete_chat_session(chat_id)
 
-        mock_session.execute.assert_called_once()  # For deleting messages
+        mock_session.execute.assert_called_once()
         mock_session.get.assert_called_once_with(ChatModel, chat_id)
         mock_session.delete.assert_called_once_with(mock_chat)
         mock_session.commit.assert_called_once()

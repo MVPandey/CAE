@@ -112,7 +112,7 @@ class TestCleanJsonResponse:
         with pytest.raises(LLMException) as exc_info:
             clean_json_response(large_response)
 
-        assert len(exc_info.value.details["response"]) <= 1003  # 1000 + "..."
+        assert len(exc_info.value.details["response"]) <= 1003
 
 
 class TestSafeJsonDumps:
@@ -179,4 +179,4 @@ class TestSafeJsonDumps:
         result = safe_json_dumps(data, allow_nan=False)
 
         parsed = json.loads(result)
-        assert isinstance(parsed, str)  # Fallback to string representation
+        assert isinstance(parsed, str)

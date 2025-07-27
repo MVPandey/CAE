@@ -30,9 +30,9 @@ class TestConversationBranch:
         assert branch.response == "Hello, how can I help you?"
         assert len(branch.simulated_user_reactions) == 2
         assert branch.score == 0.85
-        assert branch.visits == 0  # Default value
-        assert branch.parent_index is None  # Default value
-        assert branch.children_indices == []  # Default value
+        assert branch.visits == 0
+        assert branch.parent_index is None
+        assert branch.children_indices == []
 
     def test_conversation_branch_with_tree_structure(self):
         """Test ConversationBranch with tree structure fields."""

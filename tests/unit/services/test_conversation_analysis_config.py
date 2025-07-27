@@ -43,7 +43,7 @@ class TestScoringConfig:
         assert ScoringConfig.SCORE_WEIGHT_VISITS == 0.3
 
         total_weight = ScoringConfig.SCORE_WEIGHT_QUALITY + ScoringConfig.SCORE_WEIGHT_VISITS
-        assert abs(total_weight - 1.0) < 0.0001  # Allow for floating point precision
+        assert abs(total_weight - 1.0) < 0.0001
 
     def test_scoring_config_general_metrics(self):
         """Test general metrics list."""
@@ -165,7 +165,7 @@ class TestConfigInteractions:
         assert MCTSConfig.PRUNING_INTERVAL > 0
 
         assert MCTSConfig.MIN_VISITS_FOR_PRUNING > 0
-        assert MCTSConfig.MIN_VISITS_FOR_PRUNING < 100  # Reasonable upper bound
+        assert MCTSConfig.MIN_VISITS_FOR_PRUNING < 100
 
     def test_response_multipliers_ordering(self):
         """Test token multipliers have logical ordering."""

@@ -173,7 +173,7 @@ class TestHealthEndpoints:
         async def mock_get_stats():
             return {
                 "total_entries": 100,
-                "memory_usage": 1024 * 1024,  # 1MB
+                "memory_usage": 1024 * 1024,
                 "hit_rate": 0.85,
             }
 
@@ -327,7 +327,7 @@ class TestCacheMonitoringEndpoints:
         """Test cache recommendations for low hit rate."""
         mock_semantic.get_stats = MagicMock(
             return_value={
-                "hit_rate": 0.15,  # Low hit rate
+                "hit_rate": 0.15,
                 "total_requests": 100,
                 "exact_hits": 10,
                 "similarity_hits": 5,
@@ -350,7 +350,7 @@ class TestCacheMonitoringEndpoints:
         """Test cache recommendations for high hit rate."""
         mock_semantic.get_stats = MagicMock(
             return_value={
-                "hit_rate": 0.95,  # High hit rate
+                "hit_rate": 0.95,
                 "total_requests": 100,
                 "exact_hits": 90,
                 "similarity_hits": 5,
@@ -374,7 +374,7 @@ class TestCacheMonitoringEndpoints:
         mock_semantic.get_stats = MagicMock(
             return_value={
                 "hit_rate": 0.5,
-                "total_requests": 15000,  # High usage
+                "total_requests": 15000,
                 "exact_hits": 7500,
                 "similarity_hits": 0,
                 "misses": 7500,

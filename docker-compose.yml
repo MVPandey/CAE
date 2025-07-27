@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:14-alpine
+    image: postgres:17-alpine
     container_name: cae-postgres
     environment:
       POSTGRES_USER: ${DB_USER:-cae_user}
@@ -42,22 +42,30 @@ services:
     ports:
       - "8000:8000"
     environment:
-      # LLM Configuration
+      # LLM Configuration (REQUIRED)
       LLM_API_KEY: ${LLM_API_KEY}
       LLM_API_BASE_URL: ${LLM_API_BASE_URL:-https://api.openai.com/v1}
-      LLM_MODEL_NAME: ${LLM_MODEL_NAME:-gpt-4}
+      LLM_MODEL_NAME: ${LLM_MODEL_NAME:-o3-mini}
+      
+      # Optional Embedding Configuration (enables semantic caching when present)
       EMBEDDING_MODEL_API_KEY: ${EMBEDDING_MODEL_API_KEY}
       EMBEDDING_MODEL_BASE_URL: ${EMBEDDING_MODEL_BASE_URL:-https://api.openai.com/v1}
       EMBEDDING_MODEL_NAME: ${EMBEDDING_MODEL_NAME:-text-embedding-3-large}
+      
       # Database Configuration
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-conversation_analysis}
       DB_USER: ${DB_USER:-cae_user}
       DB_SECRET: ${DB_SECRET:-cae_password}
+      
       # Redis Configuration
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      
+      # Feature Toggles
+      DISABLE_PROMETHEUS_METRICS: ${DISABLE_PROMETHEUS_METRICS:-true}
+      
       # Application Configuration
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-600}
@@ -70,6 +78,46 @@ services:
     volumes:
       - ./logs:/app/logs
 
+  # Monitoring Stack (only starts when monitoring profile is active)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: cae-prometheus
+    profiles: ["monitoring"]
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    depends_on:
+      - cae
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: cae-grafana
+    profiles: ["monitoring"]
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
 volumes:
   postgres_data:
   redis_data:
+  prometheus_data:
+  grafana_data:

@@ -67,7 +67,7 @@ class TestTreeOperations:
 
         bad_child = MCTSNode("Bad child")
         bad_child.visits = 5
-        bad_child.avg_score = 0.5  # Below threshold
+        bad_child.avg_score = 0.5
 
         root.add_child(good_child)
         root.add_child(bad_child)
@@ -96,25 +96,25 @@ class TestTreeOperations:
 
         pruned_count = TreeOperations.prune_branches([root], threshold_ratio=0.8)
 
-        assert pruned_count == 3  # Children with scores 0.7, 0.6, 0.5
+        assert pruned_count == 3
         assert len(root.children) == 2
         assert all(child.avg_score >= 0.8 for child in root.children)
 
     def test_prune_branches_skip_low_visits(self):
         """Test that nodes with low visits are skipped during pruning."""
         root = MCTSNode("Root")
-        root.visits = 3  # Below MIN_VISITS_FOR_PRUNING (5)
+        root.visits = 3
         root.avg_score = 0.8
 
         child = MCTSNode("Child")
         child.visits = 2
-        child.avg_score = 0.3  # Would be pruned if root had enough visits
+        child.avg_score = 0.3
         root.add_child(child)
 
         pruned_count = TreeOperations.prune_branches([root])
 
         assert pruned_count == 0
-        assert len(root.children) == 1  # Child not pruned
+        assert len(root.children) == 1
 
     def test_prune_branches_recursive(self):
         """Test recursive pruning of nested branches."""
@@ -133,7 +133,7 @@ class TestTreeOperations:
 
         bad_grandchild = MCTSNode("Bad grandchild")
         bad_grandchild.visits = 4
-        bad_grandchild.avg_score = 0.4  # Below threshold
+        bad_grandchild.avg_score = 0.4
 
         child.add_child(good_grandchild)
         child.add_child(bad_grandchild)
@@ -143,7 +143,7 @@ class TestTreeOperations:
 
         pruned_count = TreeOperations.prune_branches([root], threshold_ratio=0.7)
 
-        assert pruned_count == 2  # bad_grandchild + great_grandchild
+        assert pruned_count == 2
         assert len(child.children) == 1
         assert child.children[0] == good_grandchild
 
@@ -169,7 +169,7 @@ class TestTreeOperations:
         assert pruned_count == 3
         for root in roots:
             assert len(root.children) == 1
-            assert root.children[0].avg_score >= 0.56  # 0.8 * 0.7
+            assert root.children[0].avg_score >= 0.56
 
     def test_count_descendants(self):
         """Test counting descendants of a node."""

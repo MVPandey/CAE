@@ -4,7 +4,7 @@ import asyncio
 import functools
 import time
 from contextlib import contextmanager
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 from prometheus_client import Counter, Gauge, Histogram, Info, generate_latest
 from prometheus_client.core import CollectorRegistry
@@ -215,9 +215,9 @@ class MetricsCollector:
         self,
         model: str,
         operation: str,
-        tokens_used: Optional[dict[str, int]] = None,
-        cost: Optional[float] = None,
-        duration: Optional[float] = None,
+        tokens_used: dict[str, int] | None = None,
+        cost: float | None = None,
+        duration: float | None = None,
         status: str = "success",
     ):
         """Track LLM API request metrics."""

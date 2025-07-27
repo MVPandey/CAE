@@ -117,9 +117,7 @@ def create_mcp_server(initialize_on_startup: bool = True) -> FastMCP:
     )
 
 
-mcp = create_mcp_server(
-    initialize_on_startup=False
-)  # Initialization is deferred to allow transport-specific handling. Ensure transport mechanisms trigger initialization when required.
+mcp = create_mcp_server(initialize_on_startup=False)
 
 
 @mcp.tool
@@ -274,7 +272,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    logger.remove()  # Remove default handler
+    logger.remove()
     logger.add(
         sys.stderr,
         level=args.log_level,

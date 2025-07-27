@@ -101,7 +101,7 @@ class TestEmbeddingService:
         result = await embedding_service.embed_text(text, use_cache=False)
 
         assert isinstance(result, np.ndarray)
-        assert result.shape == (5,)  # Based on mock embedding
+        assert result.shape == (5,)
         assert np.array_equal(result, np.array([0.1, 0.2, 0.3, 0.4, 0.5], dtype=np.float32))
 
         mock_openai_client.embeddings.create.assert_called_once()
@@ -113,7 +113,7 @@ class TestEmbeddingService:
     async def test_embed_text_with_cache_miss(self, embedding_service, mock_redis_manager):
         """Test embedding text with cache miss."""
         text = "Test text"
-        mock_redis_manager.get_json.return_value = None  # Cache miss
+        mock_redis_manager.get_json.return_value = None
 
         with patch("app.services.embeddings.embedding_service.redis_manager", mock_redis_manager):
             result = await embedding_service.embed_text(text, use_cache=True)
@@ -133,7 +133,7 @@ class TestEmbeddingService:
         result = await embedding_service.embed_text(text, use_cache=False)
 
         assert isinstance(result, np.ndarray)
-        assert result.shape == (5,)  # Based on mock
+        assert result.shape == (5,)
 
     async def test_embed_text_api_failure(self, embedding_service, mock_openai_client):
         """Test embedding text when API fails."""
@@ -188,7 +188,7 @@ class TestEmbeddingService:
 
     async def test_embed_texts_large_batch(self, embedding_service, mock_openai_client):
         """Test batch embedding with size larger than batch_size."""
-        texts = [f"Text {i}" for i in range(250)]  # Larger than default batch_size of 100
+        texts = [f"Text {i}" for i in range(250)]
 
         mock_openai_client.embeddings.create.return_value = MagicMock(
             data=[MagicMock(embedding=[0.1, 0.2, 0.3]) for _ in range(100)], usage=MagicMock(total_tokens=100)
@@ -259,7 +259,7 @@ class TestEmbeddingService:
                 yield key
 
         mock_redis_manager.scan_keys = mock_scan_keys
-        mock_redis_manager.delete.side_effect = [True, True, False]  # 2 successful, 1 failed
+        mock_redis_manager.delete.side_effect = [True, True, False]
 
         with patch("app.services.embeddings.embedding_service.redis_manager", mock_redis_manager):
             count = await embedding_service.clear_cache()

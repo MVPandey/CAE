@@ -71,8 +71,8 @@ class TestConfig:
 
         config = Config()
 
-        assert config.LOG_LEVEL == "INFO"  # Default value
-        assert config.LLM_TIMEOUT_SECONDS == 600  # Default value
+        assert config.LOG_LEVEL == "INFO"
+        assert config.LLM_TIMEOUT_SECONDS == 600
 
     def test_config_strip_whitespace(self, monkeypatch):
         """Test that Config strips whitespace from string values."""
@@ -118,19 +118,7 @@ class TestConfig:
 
         errors = exc_info.value.errors()
         error_fields = {error["loc"][0] for error in errors}
-        expected_fields = {
-            "LLM_API_KEY",
-            "LLM_API_BASE_URL",
-            "LLM_MODEL_NAME",
-            "EMBEDDING_MODEL_API_KEY",
-            "EMBEDDING_MODEL_BASE_URL",
-            "EMBEDDING_MODEL_NAME",
-            "DB_HOST",
-            "DB_PORT",
-            "DB_NAME",
-            "DB_USER",
-            "DB_SECRET",
-        }
+        expected_fields = {"LLM_API_KEY"}
         assert expected_fields.issubset(error_fields)
 
     def test_config_invalid_port(self, monkeypatch):
@@ -143,7 +131,7 @@ class TestConfig:
             "EMBEDDING_MODEL_BASE_URL": "url",
             "EMBEDDING_MODEL_NAME": "model",
             "DB_HOST": "host",
-            "DB_PORT": "not-a-number",  # Invalid
+            "DB_PORT": "not-a-number",
             "DB_NAME": "db",
             "DB_USER": "user",
             "DB_SECRET": "secret",
@@ -252,3 +240,63 @@ class TestAppSettings:
         assert app_settings.DB_PORT > 0
 
         assert app_settings.LOG_LEVEL in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+
+    def test_feature_toggles_minimal_config(self, monkeypatch, tmp_path):
+        """Test feature toggles with minimal configuration (only LLM_API_KEY)."""
+        monkeypatch.chdir(tmp_path)
+
+        for key in os.environ.copy():
+            if key.startswith(("LLM_", "EMBEDDING_", "DB_", "DISABLE_")):
+                monkeypatch.delenv(key, raising=False)
+
+        monkeypatch.setenv("LLM_API_KEY", "test-key")
+
+        config = Config()
+
+        assert config.LLM_API_KEY == "test-key"
+        assert config.LLM_API_BASE_URL == "https://api.openai.com/v1"
+        assert config.LLM_MODEL_NAME == "o3-mini"
+        assert config.EMBEDDING_MODEL_API_KEY is None
+        assert config.DB_HOST == "postgres"
+
+        assert not config.enable_semantic_cache
+        assert not config.enable_prometheus_metrics
+
+        summary = config.get_feature_summary()
+        assert summary["llm_configured"] is True
+        assert summary["semantic_caching"] is False
+        assert summary["prometheus_metrics"] is False
+
+    def test_feature_toggles_full_config(self, monkeypatch, tmp_path):
+        """Test feature toggles with full configuration."""
+        monkeypatch.chdir(tmp_path)
+
+        monkeypatch.setenv("LLM_API_KEY", "test-key")
+        monkeypatch.setenv("EMBEDDING_MODEL_API_KEY", "embed-key")
+        monkeypatch.setenv("DISABLE_PROMETHEUS_METRICS", "false")
+
+        config = Config()
+
+        assert config.enable_semantic_cache
+        assert config.enable_prometheus_metrics
+
+        summary = config.get_feature_summary()
+        assert summary["semantic_caching"] is True
+        assert summary["prometheus_metrics"] is True
+
+    def test_feature_toggles_metrics_disabled(self, monkeypatch, tmp_path):
+        """Test feature toggles with metrics disabled."""
+        monkeypatch.chdir(tmp_path)
+
+        monkeypatch.setenv("LLM_API_KEY", "test-key")
+        monkeypatch.setenv("EMBEDDING_MODEL_API_KEY", "embed-key")
+        monkeypatch.setenv("DISABLE_PROMETHEUS_METRICS", "true")
+
+        config = Config()
+
+        assert config.enable_semantic_cache
+        assert not config.enable_prometheus_metrics
+
+        summary = config.get_feature_summary()
+        assert summary["semantic_caching"] is True
+        assert summary["prometheus_metrics"] is False

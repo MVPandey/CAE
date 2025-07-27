@@ -40,7 +40,7 @@ class TestLLMService:
             mock_registry.tools = {}
 
             service = LLMService()
-            service.retry_decorator = lambda func: func  # Bypass retry decorator
+            service.retry_decorator = lambda func: func
             return service
 
     @pytest.fixture

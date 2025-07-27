@@ -123,7 +123,7 @@ class EmbeddingService:
                 await redis_manager.set_json(
                     cache_key,
                     {"embedding": embedding, "text_hash": self._hash_text(text)},
-                    ttl=86400,  # 24 hours
+                    ttl=86400,
                 )
 
             return np.array(embedding, dtype=np.float32)
@@ -182,7 +182,7 @@ class EmbeddingService:
                         await redis_manager.set_json(
                             cache_key,
                             {"embedding": embedding, "text_hash": self._hash_text(text)},
-                            ttl=86400,  # 24 hours
+                            ttl=86400,
                         )
 
             except Exception as e:

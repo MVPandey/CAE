@@ -40,11 +40,17 @@ docker compose up --build
 ```
 
 ### What You Get
-- **API Backend**: `http://localhost:8000` (health checks, metrics)
+- **API Backend**: `http://localhost:8000` (health checks, conditional metrics)
 - **MCP Server**: `http://localhost:8001/mcp/v1` (conversation analysis)
 - **Redis Cache**: `localhost:6379`
 - **PostgreSQL/PGVector**: `localhost:5432`
+
+### Optional Monitoring (Add `--profile monitoring`)
+```bash
+docker compose --profile monitoring up --build
+```
 - **Prometheus Metrics**: `http://localhost:9090`
+- **Grafana Dashboard**: `http://localhost:3000` (admin/admin)
 
 ### Shutdown
 ```bash
@@ -77,10 +83,11 @@ The **Conversational Analysis Engine (CAE)** enhances LLM response optimization 
 
 **Service Architecture:**
 - **MCP Server** (Port 8001): Conversation analysis via MCTS algorithm
-- **API Backend** (Port 8000): Health checks, metrics, monitoring endpoints
-- **Redis** (Port 6379): **Required** - Semantic caching for performance
+- **API Backend** (Port 8000): Health checks, conditional metrics endpoints
+- **Redis** (Port 6379): **Required** - Conversation storage and caching
 - **PostgreSQL/PGVector** (Port 5432): **Required** - Conversation storage
-- **Prometheus** (Port 9090): **Required** - Metrics collection and monitoring
+- **Prometheus** (Port 9090): **Optional** - Metrics collection (monitoring profile)
+- **Grafana** (Port 3000): **Optional** - Metrics dashboard (monitoring profile)
 
 ### Core Components
 
@@ -125,7 +132,7 @@ poetry run python -m app.main
 
 **Features:**
 - ✅ Health checks at `GET /health`
-- ✅ Prometheus metrics at `GET /metrics`
+- ✅ Conditional Prometheus metrics at `GET /metrics` (when enabled)
 - ✅ Service monitoring and logging
 
 ### ⚠️ Deprecated: REST Analysis Endpoint
@@ -192,15 +199,7 @@ To use CAE with Claude Desktop, add the MCP server to your configuration:
         "up", "mcp", "--build"
       ],
       "env": {
-        "LLM_API_KEY": "your_openai_api_key",
-        "LLM_API_BASE_URL": "https://api.openai.com/v1",
-        "LLM_MODEL_NAME": "gpt-4",
-        "EMBEDDINGS_API_KEY": "your_openai_api_key",
-        "EMBEDDINGS_API_BASE_URL": "https://api.openai.com/v1",
-        "EMBEDDINGS_MODEL_NAME": "text-embedding-3-small",
-        "DATABASE_URL": "postgresql+asyncpg://cae:password@localhost:5432/cae_db",
-        "REDIS_URL": "redis://localhost:6379/0",
-        "LOG_LEVEL": "INFO"
+        "LLM_API_KEY": "your_openai_api_key"
       }
     }
   }
@@ -232,15 +231,7 @@ For Claude Code users, configure the MCP server in your settings:
           "up", "mcp", "--build"
         ],
         "env": {
-          "LLM_API_KEY": "your_openai_api_key",
-          "LLM_API_BASE_URL": "https://api.openai.com/v1",
-          "LLM_MODEL_NAME": "gpt-4",
-          "EMBEDDINGS_API_KEY": "your_openai_api_key",
-          "EMBEDDINGS_API_BASE_URL": "https://api.openai.com/v1",
-          "EMBEDDINGS_MODEL_NAME": "text-embedding-3-small",
-          "DATABASE_URL": "postgresql+asyncpg://cae:password@localhost:5432/cae_db",
-          "REDIS_URL": "redis://localhost:6379/0",
-          "LOG_LEVEL": "INFO"
+          "LLM_API_KEY": "your_openai_api_key"
         }
       }
     }
@@ -276,26 +267,64 @@ cp .env.example .env
 
 ### Environment Configuration
 
-Create a `.env` file with:
+**Minimal Setup** - Only one environment variable required:
 
 ```env
-# LLM Configuration
+# REQUIRED: LLM Configuration
 LLM_API_KEY=your_openai_api_key
-LLM_API_BASE_URL=https://api.openai.com/v1
-LLM_MODEL_NAME=gpt-4
+```
 
-# Database (Required: PostgreSQL/PGVector only)
-DATABASE_URL=postgresql+asyncpg://user:password@localhost/cae_db
+**Full Setup** - All optional configuration with smart defaults:
 
-# Redis Cache (Required)
-REDIS_URL=redis://localhost:6379/0
+```env
+# REQUIRED: LLM Configuration
+LLM_API_KEY=your_openai_api_key
 
-# Prometheus Metrics (Required)
-PROMETHEUS_PORT=9090
+# LLM Configuration (optional - smart defaults)
+LLM_API_BASE_URL=https://api.openai.com/v1  # Default
+LLM_MODEL_NAME=o3-mini                      # Default
 
-# Server Configuration
-LOG_LEVEL=INFO
-CORS_ORIGINS=["http://localhost:3000"]
+# OPTIONAL: Embedding Configuration (enables semantic caching when present)
+EMBEDDING_MODEL_API_KEY=your_openai_api_key      # Optional
+EMBEDDING_MODEL_BASE_URL=https://api.openai.com/v1  # Default
+EMBEDDING_MODEL_NAME=text-embedding-3-large      # Default
+
+# Feature Toggles (optional)
+DISABLE_PROMETHEUS_METRICS=false  # Default: metrics enabled
+
+# Database Configuration (Docker Compose defaults)
+DB_HOST=postgres           # Default for Docker
+DB_PORT=5432              # Default
+DB_NAME=conversation_analysis  # Default
+DB_USER=cae_user          # Default
+DB_SECRET=cae_password    # Default
+
+# Redis Configuration (Docker Compose defaults)
+REDIS_HOST=redis          # Default for Docker
+REDIS_PORT=6379           # Default
+
+# Application Settings (optional)
+LOG_LEVEL=INFO            # Default
+LLM_TIMEOUT_SECONDS=600   # Default
+```
+
+**Alternative Providers** (e.g., OpenRouter, Groq):
+
+```env
+# OpenRouter Example
+LLM_API_KEY=your_openrouter_api_key
+LLM_API_BASE_URL=https://openrouter.ai/api/v1
+LLM_MODEL_NAME=anthropic/claude-3-sonnet
+
+# Groq Example  
+LLM_API_KEY=your_groq_api_key
+LLM_API_BASE_URL=https://api.groq.com/openai/v1
+LLM_MODEL_NAME=llama-3.1-8b-instant
+
+# For semantic caching with different embedding provider
+EMBEDDING_MODEL_API_KEY=your_embedding_provider_key
+EMBEDDING_MODEL_BASE_URL=https://api.your-provider.com/v1
+EMBEDDING_MODEL_NAME=your-embedding-model
 ```
 
 ### Infrastructure Setup

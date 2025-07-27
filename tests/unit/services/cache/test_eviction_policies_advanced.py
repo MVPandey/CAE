@@ -114,7 +114,7 @@ class TestHybridEvictionPolicyAdvanced:
         assert "last_accessed" in updated_entry
         assert "access_count" in updated_entry
 
-        await policy.on_evict("key", {})  # Should not raise
+        await policy.on_evict("key", {})
 
     @pytest.mark.asyncio
     async def test_hybrid_single_policy(self):
@@ -164,7 +164,7 @@ class TestEvictionPolicyEdgeCases:
         policy = TTLEvictionPolicy()
 
         entry = {"created_at": "not-a-date"}
-        assert await policy.should_evict(entry) is True  # Should evict invalid entries
+        assert await policy.should_evict(entry) is True
 
         entry = {"created_at": "2023-01-01T00:00:00"}
         assert await policy.should_evict(entry) is True
@@ -174,14 +174,14 @@ class TestEvictionPolicyEdgeCases:
         policy = LRUEvictionPolicy()
 
         entries = [
-            ("key1", {}),  # No timestamps
+            ("key1", {}),
             ("key2", {"last_accessed": "2023-01-01T00:00:00"}),
             ("key3", {"created_at": "2023-01-01T00:00:00"}),
         ]
 
         candidates = policy.get_eviction_candidates(entries, 2)
         assert len(candidates) == 2
-        assert "key1" in candidates  # Entry with no timestamps
+        assert "key1" in candidates
 
     def test_lfu_policy_equal_access_counts(self):
         """Test LFU policy with many entries having same access count."""
@@ -195,7 +195,7 @@ class TestEvictionPolicyEdgeCases:
         ]
 
         candidates = policy.get_eviction_candidates(entries, 2)
-        assert candidates == ["key2", "key3"]  # Oldest entries
+        assert candidates == ["key2", "key3"]
 
     @pytest.mark.asyncio
     async def test_policy_concurrent_access(self):
@@ -209,5 +209,5 @@ class TestEvictionPolicyEdgeCases:
         results = await asyncio.gather(*tasks)
 
         for result in results:
-            assert result["access_count"] == 1  # Each gets a copy
+            assert result["access_count"] == 1
             assert "last_accessed" in result

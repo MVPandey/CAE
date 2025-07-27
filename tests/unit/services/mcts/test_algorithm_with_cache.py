@@ -56,7 +56,7 @@ def mock_dependencies():
 def mock_semantic_cache():
     """Create mock semantic cache."""
     cache = AsyncMock()
-    cache.get = AsyncMock(return_value=None)  # Default to cache miss
+    cache.get = AsyncMock(return_value=None)
     cache.store = AsyncMock(return_value=True)
     return cache
 
@@ -84,8 +84,8 @@ def initial_responses():
 def mcts_config():
     """Create MCTS configuration."""
     return {
-        "iterations": 1,  # Single iteration for fast tests
-        "simulation_depth": 1,  # Minimal depth for fast tests
+        "iterations": 1,
+        "simulation_depth": 1,
         "exploration_constant": 1.414,
         "goal": "Help the user effectively",
         "max_tokens": 250,
@@ -156,7 +156,7 @@ class TestMCTSAlgorithmWithCache:
 
             score, new_children = await mcts._expand_and_simulate(base_messages, node, config)
 
-        assert score == 0.9  # From cached data
+        assert score == 0.9
         assert node.sub_history == sample_cache_entry.simulation_data["simulation"]
         assert node.simulated_reactions == sample_cache_entry.simulation_data["user_reactions"]
         assert node.general_metrics == sample_cache_entry.score_data["general_metrics"]
@@ -175,13 +175,13 @@ class TestMCTSAlgorithmWithCache:
     ):
         """Test node expansion with cache miss."""
         response_generator, simulator, scorer = mock_dependencies
-        mock_semantic_cache.get.return_value = None  # Cache miss
+        mock_semantic_cache.get.return_value = None
 
         with patch("app.services.mcts.algorithm.semantic_cache", mock_semantic_cache):
             mcts = MCTSAlgorithm(response_generator, simulator, scorer, use_cache=True)
 
             node = MCTSNode("Test response")
-            node.visits = 1  # Enable expansion
+            node.visits = 1
             config = {"max_tokens": 250, "goal": "Test goal", "simulation_depth": 3}
 
             score, new_children = await mcts._expand_and_simulate(base_messages, node, config)
@@ -209,7 +209,7 @@ class TestMCTSAlgorithmWithCache:
         mcts = MCTSAlgorithm(response_generator, simulator, scorer, use_cache=False)
 
         node = MCTSNode("Test response")
-        node.visits = 1  # Enable expansion
+        node.visits = 1
         config = {"max_tokens": 250, "simulation_depth": 3, "goal": "Test goal"}
 
         score, new_children = await mcts._expand_and_simulate(base_messages, node, config)
@@ -233,9 +233,9 @@ class TestMCTSAlgorithmWithCache:
         response_generator, simulator, scorer = mock_dependencies
 
         mock_semantic_cache.get.side_effect = [
-            sample_cache_entry,  # Hit
-            None,  # Miss
-            sample_cache_entry,  # Hit
+            sample_cache_entry,
+            None,
+            sample_cache_entry,
         ]
 
         with patch("app.services.mcts.algorithm.semantic_cache", mock_semantic_cache):
@@ -266,13 +266,13 @@ class TestMCTSAlgorithmWithCache:
         response_generator, simulator, scorer = mock_dependencies
         mcts = MCTSAlgorithm(response_generator, simulator, scorer)
 
-        root = MCTSNode("", parent=None)  # Empty root
+        root = MCTSNode("", parent=None)
         child = MCTSNode("First response", parent=root)
         grandchild = MCTSNode("Second response", parent=child)
 
         path = mcts._build_conversation_path(base_messages, grandchild)
 
-        assert len(path) == 4  # 2 base + 2 responses
+        assert len(path) == 4
         assert path[-2].content == "First response"
         assert path[-1].content == "Second response"
 
@@ -313,7 +313,7 @@ class TestMCTSAlgorithmWithCache:
     ):
         """Test that cache stores only happen for non-root nodes."""
         response_generator, simulator, scorer = mock_dependencies
-        mock_semantic_cache.get.return_value = None  # Always miss
+        mock_semantic_cache.get.return_value = None
 
         with patch("app.services.mcts.algorithm.semantic_cache", mock_semantic_cache):
             mcts = MCTSAlgorithm(response_generator, simulator, scorer, use_cache=True)

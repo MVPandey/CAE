@@ -26,7 +26,7 @@ class TestInterceptHandler:
 
         record = MagicMock()
         record.name = "test"
-        record.levelno = 25  # Custom level
+        record.levelno = 25
         record.levelname = "CUSTOM"
         record.exc_info = None
         record.getMessage.return_value = "Test message"

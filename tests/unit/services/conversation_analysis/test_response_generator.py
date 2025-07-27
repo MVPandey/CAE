@@ -264,9 +264,9 @@ class TestResponseGenerator:
         await response_generator.generate_initial_branches(sample_messages, num_branches, goal, max_tokens)
 
         messages = mock_llm_service.query_llm.call_args.kwargs["messages"]
-        assert len(messages) == len(sample_messages) + 1  # System prompt + conversation
-        assert messages[0].role == "system"  # First is system prompt
-        assert messages[1:] == sample_messages  # Rest is conversation history
+        assert len(messages) == len(sample_messages) + 1
+        assert messages[0].role == "system"
+        assert messages[1:] == sample_messages
 
     @pytest.mark.asyncio
     async def test_generate_expansion_response_prompt_format(

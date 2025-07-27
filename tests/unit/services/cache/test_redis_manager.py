@@ -232,7 +232,7 @@ class TestRedisManager:
         async def mock_sleep(seconds):
             nonlocal call_count
             call_count += 1
-            if call_count >= 2:  # Stop after one ping
+            if call_count >= 2:
                 raise asyncio.CancelledError()
             return
 

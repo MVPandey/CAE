@@ -65,7 +65,7 @@ class TestChatService:
             result = await chat_service.process_message(chat_id=None, user_id=mock_uuid, user_message="Hello")
 
         mock_create_session.assert_called_once_with(mock_uuid)
-        assert mock_create_message.call_count == 2  # User message + assistant message
+        assert mock_create_message.call_count == 2
         mock_get_history.assert_called_with(mock_uuid)
         assert result == mock_history
 
@@ -90,7 +90,7 @@ class TestChatService:
                 chat_id=mock_uuid, user_id=mock_uuid, user_message="How are you?"
             )
 
-        assert mock_create_message.call_count == 2  # User message + assistant message
+        assert mock_create_message.call_count == 2
         mock_get_history.assert_called_with(mock_uuid)
         assert result == mock_history
 

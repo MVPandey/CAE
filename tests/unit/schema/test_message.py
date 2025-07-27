@@ -88,7 +88,7 @@ class TestToolMessage:
 
         with pytest.raises(ValidationError) as exc_info:
             ToolMessage(
-                role="user",  # Invalid role for ToolMessage
+                role="user",
                 tool_call_id="123",
                 name="test",
                 content="content",
